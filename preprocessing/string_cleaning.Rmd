@@ -1,0 +1,96 @@
+### Cleaning text
+
+#### 1.1 Load data and packages
+```{R}
+library(dplyr)
+library(tidytext)
+library(hunspell)
+library(stringr)
+```
+```{R}
+data.train <- read.csv("../data/train.csv")
+# data.test <- read.csv("../data.test.csv")
+```
+```{R}
+str(data.train)
+```
+```{R}
+head(data.train)
+```
+
+#### 1.2 A look at the words in the training data
+```{R}
+# Get a single dataframe with all the questions.
+train.questions <- data.train %>%
+      mutate(qid = qid1, question = question1) %>%
+      select(qid, question) %>%
+      bind_rows(
+            data.train %>% 
+                  mutate(qid = qid2, question = question2) %>%
+                  select(qid, question)
+      ) %>%
+      group_by(qid, question) %>%
+      filter(row_number() == 1) %>%
+      ungroup()
+
+```
+```{R}
+head(train.questions)
+
+```
+
+Now to open up each question into the individual words
+```{R}
+train.words <- train.questions %>%
+      unnest_tokens(word, question) %>%
+      mutate(valid.spelling = hunspell_check(word))
+```
+```{R}
+train.words
+```
+```{R}
+train.words %>% group_by(word) %>% 
+      summarise(n = n()) %>% 
+      arrange(n)
+
+```
+
+#### 1.3 Convert units to longform
+
+```{R}
+unitted <- "[0-9\\.]+[a-z]+"
+
+train.words %>%
+      filter(!valid.spelling) %>%
+      filter(word == str_match(word, unitted)) %>%
+      mutate(value = str_split_fixed(word, "[0-9\\.]+",2)[,1],
+             unit = str_split_fixed(word,"[0-9\\.]+",2)[,2]) %>%
+      group_by(unit) %>%
+      summarize(n = n())
+
+```
+Some of these are actual units, while others are just words attatched to numbers.
+For the proper words, split them into numbers and words. 
+
+```{R}
+train.words %>%
+      filter(!valid.spelling) %>%
+      filter(word == str_match(word, unitted)) %>%
+      mutate(value = str_split_fixed(word, "[0-9\\.]+",2)[,1],
+             unit = str_split_fixed(word,"[0-9\\.]+",2)[,2]) %>%
+      group_by(unit) %>%
+      summarize(n = n()) %>% 
+      ungroup() %>%
+      mutate(valid.spelling = hunspell_check(unit)) %>%
+      filter(valid.spelling)
+
+```
+
+
+```{R}
+shorthand.units = c("m", "cm", "k", "g", "kg", "mg", "w", "s", "min" , "j")
+longhand.units = c()
+
+```
+
+
