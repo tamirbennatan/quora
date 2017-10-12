@@ -1,6 +1,6 @@
 ### Cleaning text
 
-#### 1.1 Load data and packages
+#### 0. Load data and packages
 ```{R}
 library(dplyr)
 library(tidytext)
@@ -18,7 +18,9 @@ str(data.train)
 head(data.train)
 ```
 
-#### 1.2 A look at the words in the training data
+### 1. Ivestigating the words in the questions
+
+#### 1.1 A look at the words in the training data
 ```{R}
 # Get a single dataframe with all the questions.
 train.questions <- data.train %>%
@@ -55,7 +57,7 @@ train.words %>% group_by(word) %>%
 
 ```
 
-#### 1.3 Convert units to longform
+#### 1.2 Convert units to longform
 
 ```{R}
 unitted <- "[0-9\\.]+[a-z]+"
@@ -86,11 +88,229 @@ train.words %>%
 
 ```
 
+There seem to be some actual units attatched to numbers, and typos where regular words are attatched to numers. I'll first cast the shorthand units to longhand units, and then split all numbers characters from words by a space. 
 
 ```{R}
-shorthand.units = c("m", "cm", "k", "g", "kg", "mg", "w", "s", "min" , "j")
-longhand.units = c()
+shorthand.units = c("m", "cm", "k", "g","gm", "kg", "mg",
+                     "min" , "j", "deg", "hr", "hrs", 
+                    "in", "kcal", "kl", "kph", "kw", 
+                     "mm", "mpg", "nm",  "sec", "secs",
+                      "wk", "wks", "wpm", "yr", "yrs")
+
+longhand.units = c("meter", "centimeter", "kelvin", "gram", "gram", "kilogram", "miligram", 
+                   "minute", "joules", "degrees", "hour", "hours",
+                   "inch", "kilocalorie", "kiloliter", "kilomters per hour", "kilowatt",
+                   "milimeter", "miles per gallon", "nanometer", "second", "seconds",
+                   "week", "weeks", "words per minute", "year", "years"
+                   )
+```
+```{R}
+print("FROM TO")
+for (i in 1:length(shorthand.units)){
+      print(paste(shorthand.units[i], longhand.units[i],sep = " "))
+}
 
 ```
+
+Replace all the shorthand units with longhand units, and appropriately space
+```{R}
+# regexes to match in each iteration
+rgxs = rep("", length(shorthand.units))
+for (i in 1:length(shorthand.units)){
+      rgxs[i] <- regex(paste('([0-9]+)(', shorthand.units[i], ' | ',shorthand.units[i], ' )', sep = ""), ignore_case = TRUE)
+}
+# convert shorthanded units to longhanded united values in data
+for (i in 1:length(shorthand.units)){
+      .GlobalEnv$data.train <- .GlobalEnv$data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(rgxs[i]), paste("\\1 ", longhand.units[i]," ",  sep = "")),
+                   question2 = str_replace_all(question2, regex(rgxs[i]), paste("\\1 ", longhand.units[i]," ",  sep = ""))
+            )
+}
+
+```
+Note: in the above cleaning, I'm changing numbers followed by a space, then suspected units to numbers and longform units. For example, _10 cm_ goes to _10 centimeter_. *Come back to this* - perhaps this is too strong, and I should only change things of the form _10cm_ to _10 centimete_
+
+#### 1.3 A look at most commonly misspelled words
+
+```{R}
+train.words %>%
+      filter(!valid.spelling) %>%
+      group_by(word) %>%
+      summarize(n = n()) %>% 
+      ungroup() %>%
+      mutate(valid.spelling = hunspell_check(word)) %>%
+      arrange(desc(n))
+```
+
+Some of the most common errors are appreviations like _i'm_, _u.s_ and _nyc_
+
+
+```{R}
+train.words %>%
+      filter(!valid.spelling) %>%
+      group_by(word) %>%
+      summarize(n = n()) %>% 
+      ungroup() %>%
+      mutate(valid.spelling = hunspell_check(word)) %>%
+      mutate(len = str_length(word)) %>%
+      filter(len == 2) %>%
+       arrange(desc(n))
+
+```
+```{R}
+# two letter words I'm going to replace
+spelling.errs.2 <- c(" uk ", " os ", " eu ", " gb ", " fb ", " js ", " gf")
+# replacements
+spelling.fixes.2 = c("united kingdom", "operating system ", "european union", "gigabyte", "facebook", "javascript", "girlfriend")
+
+# convert shorthanded units to longhanded united values in data
+for (i in 1:length(spelling.errs.2)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(spelling.errs.2[i], ignore_case = TRUE), spelling.fixes.2[i]),
+                   quetison2 = str_replace_all(question2, regex(spelling.errs.2[i], ignore_case = TRUE), spelling.fixes.2[i])
+            )
+}
+```
+
+```{R}
+train.words %>%
+      filter(!valid.spelling) %>%
+      group_by(word) %>%
+      summarize(n = n()) %>% 
+      ungroup() %>%
+      mutate(valid.spelling = hunspell_check(word)) %>%
+      mutate(len = str_length(word)) %>%
+      filter(len == 3) %>%
+       arrange(desc(n))
+
+```
+```{R}
+smpl <- data.train %>% filter(str_detect(question1, " u\\.s\\.a "))
+View(smpl)
+```
+
+```{R}
+spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " nyc " )
+spelling.fixes.3 <- c(" i am ", " america ", " america ", " new york city " )
+
+# Fix spelling errors
+for (i in 1:length(spelling.errs.3)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i]),
+                   question2 = str_replace_all(question2, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i])
+            )
+}
+
+```
+
+#### Look at most common words with alphanumeric characters 
+
+```{R}
+train.words %>%
+      filter(str_detect(word, regex("[^a-z0-9\\.]", ignore_case = TRUE))) %>%
+      group_by(word) %>%
+      summarise(n = n()) %>%
+      arrange(desc(n))
+
+```
+
+THe most common words with non alphanumeric characters are words abbreviated words, like _what's_. 
+
+I'll split these abbreviations using general rules when possible, and then consider the most important cases individually. 
+
+First, the suffix _-n't_ translates to _ - not_. 
+```{R}
+data.train <- data.train %>%
+      mutate(question1 = str_replace_all( question1, regex("(can\'t )"), "can not "),
+             question2 = str_replace_all( question2, regex("(can\'t )"), "can not "),
+             question1 = str_replace_all( question1, regex("(won\'t )"), "will not "),
+             question2 = str_replace_all( question2, regex("(won\'t )"), "will not "),
+            question1 = str_replace_all( question1, regex("([a-z]+)(n\'t )"), "\\1 not "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(n\'t )"), "\\1 not "))
+
+```
+
+Now, convert the suffix _-'ve_ translates to _ - have_
+```{R}
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'ve )"), "\\1 have "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'ve )"), "\\1 have "))
+```
+
+Now, convert the suffix _'re_ translates to _ - are_
+```{R}
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'re )"), "\\1 are "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'re )"), "\\1 are "))
+```
+
+Now, convert the suffix _'ll_ translates to _ - will_
+```{R}
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'ll )"), "\\1 will "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'ll )"), "\\1 will "))
+
+
+```
+
+Now, convert the suffix _'d_ translates to _ - would_
+
+
+```{R}
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'d )"), "\\1 would "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'d )"), "\\1 would "))
+
+```
+
+
+### 2. Looking at words with non-alphanumeric characters
+
+#### 2.1 The most frequently occuring words with special characters
+
+```{R}
+train.words %>%
+      filter(!is.na(str_match(word, regex("[^a-z0-9\'\\,\\.\\- ]", ignore_case = TRUE)))) %>%
+      group_by(word) %>%
+      summarize(n = n()) %>% 
+      arrange(desc(n))
+
+```
+
+One of the rifrst thing I notice is that some words use *’* as an appostrophe, while others use *'*. This means that much of the processing that I have done previously will not affect the text! I'll be sure to first cast all *’* characters to *'*, then re-apply the opertations above. 
+
+If I assume that I have fixed these cases, the most frequently occuring words with special characters are:
+
+```{R}
+train.words %>%
+      filter(!is.na(str_match(word, regex("[^a-z0-9\'\\’\\,\\.\\- ]", ignore_case = TRUE)))) %>%
+      group_by(word) %>%
+      summarize(n = n()) %>% 
+      arrange(desc(n))
+
+```
+
+I see that some of the most common words are those that contain letters with accents - _pokémon_, _schrödinger's_, etc. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
