@@ -91,13 +91,13 @@ train.words %>%
 There seem to be some actual units attatched to numbers, and typos where regular words are attatched to numers. I'll first cast the shorthand units to longhand units, and then split all numbers characters from words by a space. 
 
 ```{R}
-shorthand.units = c("m", "cm", "k", "g","gm", "kg", "mg",
+shorthand.units = c("m", "cm", "g","gm", "kg", "mg",
                      "min" , "j", "deg", "hr", "hrs", 
                     "in", "kcal", "kl", "kph", "kw", 
                      "mm", "mpg", "nm",  "sec", "secs",
                       "wk", "wks", "wpm", "yr", "yrs")
 
-longhand.units = c("meter", "centimeter", "kelvin", "gram", "gram", "kilogram", "miligram", 
+longhand.units = c("meter", "centimeter", "gram", "gram", "kilogram", "miligram", 
                    "minute", "joules", "degrees", "hour", "hours",
                    "inch", "kilocalorie", "kiloliter", "kilomters per hour", "kilowatt",
                    "milimeter", "miles per gallon", "nanometer", "second", "seconds",
@@ -161,7 +161,7 @@ train.words %>%
 # two letter words I'm going to replace
 spelling.errs.2 <- c(" uk ", " os ", " eu ", " gb ", " fb ", " js ", " gf")
 # replacements
-spelling.fixes.2 = c("united kingdom", "operating system ", "european union", "gigabyte", "facebook", "javascript", "girlfriend")
+spelling.fixes.2 = c("england", "operating system ", "european union", "gigabyte", "facebook", "javascript", "girlfriend")
 
 # convert shorthanded units to longhanded united values in data
 for (i in 1:length(spelling.errs.2)){
@@ -190,8 +190,8 @@ View(smpl)
 ```
 
 ```{R}
-spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " nyc " )
-spelling.fixes.3 <- c(" i am ", " america ", " america ", " new york city " )
+spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " u\\.s\\. ", "nyc " )
+spelling.fixes.3 <- c(" i am ", " america ", " america ", " america  " new york city " )
 
 # Fix spelling errors
 for (i in 1:length(spelling.errs.3)){
@@ -200,7 +200,6 @@ for (i in 1:length(spelling.errs.3)){
                    question2 = str_replace_all(question2, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i])
             )
 }
-
 ```
 
 #### Look at most common words with alphanumeric characters 
@@ -294,21 +293,269 @@ train.words %>%
 
 ```
 
-I see that some of the most common words are those that contain letters with accents - _pokémon_, _schrödinger's_, etc. 
+I see that some of the most common words are those that contain vowels with accents - _pokémon_, _schrödinger's_, etc. 
+
+I'm sure that not all users take put in the time to type out these accented vowels. Since we plan to use word embeddings, pairs of words like _pokémon_ and _pokemon_ are not mapped to the same vector, which is a loss of information. 
+
+Thus, I will standardize the words to remove the (most commonly occuring) accents on vowels. 
+
+```{R}
+accented <- c( "ã", "á", "ä", "å", "à", "ç", "é", "è", "í", "ï",  "ì", "ö", "ô", "ó", "ò", "ð", "ü", "ú", "ù", "û", "ñ")
+unaccented <- c("a", "a", "a","a", "a", "c", "e", "e", "i", "i", "i", "o", "o", "o", "o", "o", "u", "u", "u","u", "n")
+```
+```{R}
+for (i in 1:length(accented)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, accented[i], unaccented[i]), 
+                   question2 = str_replace_all(question2, accented[i], unaccented[i]))
+}
+```
 
 
+```{R}
+data.train %>%
+      unnest_tokens(word, question1) %>%
+      mutate(word = paste(toupper(substr(word, 1, 1)), substr(word, 2, nchar(word)), sep="")) %>%
+      mutate(valid.spelling = hunspell_check(word)) %>%
+      filter(!valid.spelling)%>%
+      group_by(word) %>%
+      summarize(n = n()) %>% 
+      arrange(desc(n))
+
+```
+
+#### 2.2 Misclelaneous fixes
+
+One off fixes. Some of these are inspired by this notebook: https://www.kaggle.com/currie32/quora-question-pairs/the-importance-of-cleaning-text
+
+```{R}
+misc.errors <- c("π ", "([1-9][0-9]*)(k) ", " e\\-mail ", " cs ", " upvotes ", " calender ",
+                 " actived ", " demonitization ", " intially ", " quikly ", " programing ", " bestfriend ", 
+                 " the US ")
+misc.fixes <-  c(" pi ", "\\1 k ", " email ", " computer science ", " up votes ", " calendar ",
+                 " active ", " demonetization ", " initialy ", " quickly ", "programming ", " best friend ", " america ")
+
+```
+```{R}
+for (i in 1:length(misc.errors)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(misc.errors[i], ignore_case = TRUE),
+                                               regex(misc.fixes[i], ignore_case = TRUE)),
+                   question2 = str_replace_all(question2, regex(misc.errors[i], ignore_case = TRUE),
+                                               regex(misc.fixes[i], ignore_case = TRUE))
+                   )
+}
+```
+```{R}
+data.train %>%
+      filter(is.na(question1) | is.na(question2))
+
+```
 
 
+### 3. Removing non-alphanumieric characters
+
+For now I will not remove punctuation, as I may want to create some linguistic features out of them in the future. I will however remove all other non-ascii characters. 
+
+Removing punctuation, though it removes symantic meaning for a human, may be helpful in removing the noise in the data. For now, I will space out all punctuation marks with whitespace characters. This way, the string _"really?"_ will turn to _"really ?"_, and so the word _really_ will be identified in the word embeddings. Otherwise we would be trying to embedd the word _really?_, which likely isn't in the lexicon. 
+
+When building models, should experiment with this. 
+
+```{R}
+data.train <- data.train %>% 
+      mutate(question1 = str_replace_all(question1, regex("[^a-z0-9\\.\\,\\-\\+\\=\'\\?]", ignore_case = TRUE), " "),
+             question2 = str_replace_all(question2, regex("[^a-z0-9\\.\\,\\-\\+\\=\'\\?]", ignore_case = TRUE), " "), 
+             question1 = str_replace_all(question1, regex("[ ]{2,}"), " "),
+             question2 = str_replace_all(question2, regex("[ ]{2,}"), " ")) 
+
+```
 
 
+### 4. Putting it all together (in order)
+
+I applied all the transformations in the order that I discovered their neccesity - not in the order which they should be applied. Thus the data is currupted. 
+
+I will re-load the data, and apply every operation over again. This block should be run (or modified) to clean the data in the future. 
 
 
+#### 4.1 Re-load data. 
+```{R}
+data.train <- read.csv("../data/train.csv")
+#data.test <- read.csv("../data/test.csv")
+```
+
+#### 4.2 Replace special characters with characters you want to ultimately keep 
+
+```{R}
+# replace accented vowels with their unaccented equivalents
+accented <- c( "ã", "á", "ä", "å", "à", "ç", "é", "è", "í", "ï", "ì", "ö", "ô", "ó", "ò", "ð", "ü", "ú", "ù", "û", "ñ")
+unaccented <- c("a", "a", "a","a", "a", "c", "e", "e", "i", "i", "i", "o", "o", "o", "o", "o", "u", "u", "u","u", "n")
+
+for (i in 1:length(accented)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, accented[i], unaccented[i]), 
+                   question2 = str_replace_all(question2, accented[i], unaccented[i]))
+}
+
+# replace ’ with '
+data.train <- data.train %>% mutate(question1 = str_replace_all(question1, "’", "'"),
+                     question2 = str_replace_all(question2, "’", "'"))
+
+# replace '&' with 'and', and '=' with 'equals
+data.train <- data.train %>% mutate(question1 = str_replace_all(question1, " & ", " and "),
+                     question2 = str_replace_all(question2, " & ", " and "),
+                     question1 = str_replace_all(question1, "=", " equals "),
+                     question2 = str_replace_all(question2, "=", " equals "))
+
+```
+#### 4.3 Fix common spelling errors and abbreviations
+```{R}
+# two letter words I'm going to replace
+spelling.errs.2 <- c(" uk ", " os ", " eu ", " gb ", " fb ", " js ", " gf ")
+# replacements
+spelling.fixes.2 = c(" england ", " operating system ", " european union", " gigabyte ", " facebook ", " javascript ", " girlfriend ")
+
+# fix common 2 letter erors 
+for (i in 1:length(spelling.errs.2)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(spelling.errs.2[i], ignore_case = TRUE), spelling.fixes.2[i]),
+                   question2 = str_replace_all(question2, regex(spelling.errs.2[i], ignore_case = TRUE), spelling.fixes.2[i])
+            )
+}
+```
+```{R}
+# three letter words I'm going to replace
+spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " u\\.s\\. ", " nyc " )
+spelling.fixes.3 <- c(" i am ", " america ", " america ", " america ", " new york city " )
+
+# Fix spelling errors
+for (i in 1:length(spelling.errs.3)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i]),
+                   question2 = str_replace_all(question2, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i])
+            )
+}
+```
+#### 4.3 Misc. spellling errors
+```{R}
+misc.errors <- c("π ", "([1-9][0-9]*)(k) ", " e\\-mail ", " cs ", " upvotes ", " calender ",
+                 " actived ", " demonitization ", " intially ", " quikly ", " programing ", " bestfriend ", 
+                 " the US ")
+misc.fixes <-  c(" pi ", "\\1 k ", " email ", " computer science ", " up votes ", " calendar ",
+                 " active ", " demonetization ", " initialy ", " quickly ", "programming ", " best friend ", " america ")
+
+```
+```{R}
+
+for (i in 1:length(misc.errors)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(misc.errors[i], ignore_case = TRUE),
+                                               regex(misc.fixes[i], ignore_case = TRUE)),
+                   question2 = str_replace_all(question2, regex(misc.errors[i], ignore_case = TRUE),
+                                               regex(misc.fixes[i], ignore_case = TRUE))
+                   )
+}
+```
+
+#### 4.4 Convert shorthand units to longhand units
+```{R}
+shorthand.units = c("m", "cm", "g","gm", "kg", "mg",
+                     "min" , "j", "deg", "hr", "hrs", 
+                    "in", "kcal", "kl", "kph", "kw", 
+                     "mm", "mpg", "nm",  "sec", "secs",
+                      "wk", "wks", "wpm", "yr", "yrs")
+
+longhand.units = c("meter", "centimeter", "gram", "gram", "kilogram", "miligram", 
+                   "minute", "joules", "degrees", "hour", "hours",
+                   "inch", "kilocalorie", "kiloliter", "kilomters per hour", "kilowatt",
+                   "milimeter", "miles per gallon", "nanometer", "second", "seconds",
+                   "week", "weeks", "words per minute", "year", "years"
+                   )
+```
+```{R}
+# regexes to match in each iteration
+rgxs = rep("", length(shorthand.units))
+for (i in 1:length(shorthand.units)){
+      rgxs[i] <- regex(paste('([0-9]+)(', shorthand.units[i], ' | ',shorthand.units[i], ' )', sep = ""), ignore_case = TRUE)
+}
+# convert shorthanded units to longhanded united values in data
+for (i in 1:length(shorthand.units)){
+      data.train <- data.train %>%
+            mutate(question1 = str_replace_all(question1, regex(rgxs[i]), paste("\\1 ", longhand.units[i]," ",  sep = "")),
+                   question2 = str_replace_all(question2, regex(rgxs[i]), paste("\\1 ", longhand.units[i]," ",  sep = ""))
+            )
+}
+```
+
+#### 4.5 Replace common abbreviations with longhand (would've -> would have)
+```{R}
+# pattern: can't -> can not 
+data.train <- data.train %>%
+      mutate(question1 = str_replace_all( question1, regex("(can\'t )"), "can not "),
+             question2 = str_replace_all( question2, regex("(can\'t )"), "can not "),
+             question1 = str_replace_all( question1, regex("(won\'t )"), "will not "),
+             question2 = str_replace_all( question2, regex("(won\'t )"), "will not "),
+            question1 = str_replace_all( question1, regex("([a-z]+)(n\'t )"), "\\1 not "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(n\'t )"), "\\1 not "))
+
+```
+
+Now, convert the suffix _-'ve_ translates to _ - have_
+```{R}
+# pattern: would've -> would have 
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'ve )"), "\\1 have "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'ve )"), "\\1 have "))
+```
+```{R}
+# pattern: you're -> you are
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'re )"), "\\1 are "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'re )"), "\\1 are "))
+```
+```{R}
+# pattern: you'll -> you will
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'ll )"), "\\1 will "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'ll )"), "\\1 will "))
+```
+```{R}
+# pattern: they'd -> they would
+data.train <- data.train %>%
+      mutate(
+            question1 = str_replace_all( question1, regex("([a-z]+)(\'d )"), "\\1 would "),
+            question2 = str_replace_all( question2, regex("([a-z]+)(\'d )"), "\\1 would "))
+
+```
+
+#### 4.6 Space out punctuation
+```{R}
+data.train <- data.train %>% mutate(question1 = str_replace_all(question1, "([\\.\\,\\-\\?\"])", " \\1 "), 
+                      question2 = str_replace_all(question2, "([\\.\\,\\-\\?\"])", " \\1 "))
 
 
+```
 
+#### 4.7 Remove all non-alphanumeric characters
 
+```{R}
+# also remove any repeates spaces that may have come about
+data.train <- data.train %>% 
+      mutate(question1 = str_replace_all(question1, regex("[^a-z0-9\\.\\,\\-\\+\'\\?]", ignore_case = TRUE), " "),
+             question2 = str_replace_all(question2, regex("[^a-z0-9\\.\\,\\-\\+\'\\?]", ignore_case = TRUE), " "), 
+             question1 = str_replace_all(question1, regex("[ ]{2,}"), " "),
+             question2 = str_replace_all(question2, regex("[ ]{2,}"), " ")) 
+```
 
+#### 5. Write  processed data to disk
 
+```{R}
+write.csv(data.train, "../data/processed/train.csv")
+
+```
 
 
 
