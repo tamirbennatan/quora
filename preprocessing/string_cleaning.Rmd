@@ -8,7 +8,8 @@ library(hunspell)
 library(stringr)
 ```
 ```{R}
-data.train <- read.csv("../data/train.csv")
+data.traion.original = read.csv("../data/train.csv")
+#data.train <- read.csv("../data/train.csv")
 # data.test <- read.csv("../data.test.csv")
 ```
 ```{R}
@@ -547,13 +548,14 @@ data.train <- data.train %>%
       mutate(question1 = str_replace_all(question1, regex("[^a-z0-9\\.\\,\\-\\+\'\\?]", ignore_case = TRUE), " "),
              question2 = str_replace_all(question2, regex("[^a-z0-9\\.\\,\\-\\+\'\\?]", ignore_case = TRUE), " "), 
              question1 = str_replace_all(question1, regex("[ ]{2,}"), " "),
-             question2 = str_replace_all(question2, regex("[ ]{2,}"), " ")) 
+             question2 = str_replace_all(question2, regex("[ ]{2,}"), " "))
 ```
 
 #### 5. Write  processed data to disk
 
 ```{R}
-write.csv(data.train, "../data/processed/train.csv")
+# there are two empty questions. remove these, and write to disk. 
+write.csv(data.train %>% filter(question1 != '' & question2 != ''), "../data/processed/train.csv")
 
 ```
 
