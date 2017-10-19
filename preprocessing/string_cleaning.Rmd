@@ -192,7 +192,7 @@ View(smpl)
 
 ```{R}
 spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " u\\.s\\. ", "nyc " )
-spelling.fixes.3 <- c(" i am ", " america ", " america ", " america  " new york city " )
+spelling.fixes.3 <- c(" i am ", " america ", " america ", " america" , " new york city " )
 
 # Fix spelling errors
 for (i in 1:length(spelling.errs.3)){
