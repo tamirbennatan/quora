@@ -100,5 +100,5 @@ ENV/
 *.vec
 data/
 feature_engineering/
-models/
+
 
