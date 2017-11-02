@@ -1,0 +1,313 @@
+---
+title: "Pre-processing the TREC dataset. "
+---
+
+## Introduction
+
+I will be building a recurrent neural network to classify questions in the `TREC` dataset based on their answer types. For example, the label of the question _Who is the Prime Minister of Canada?_ would be _HUMAN_. 
+
+As an ensemble approach, I will apply this classifier to the quesitons in the Quora dataset (which are of main interest), and use the predictions as features. 
+
+### 0. Loading packages and data
+
+#### 0.1 Packages
+```{R}
+library(dplyr)
+library(tidyr)
+library(stringr)
+```
+
+#### 0.2 load the TREC dataset. 
+
+```{R}
+data.train = data_frame( raw = readLines("../data/TREC/train_5500.label.txt"))
+
+data.test = data_frame(raw = readLines("../data/TREC/TREC_10.label.txt"))
+```
+
+
+
+### 1. Split datasets into appropriate columns. 
+
+We want one column for the question, one for the short label, and one for the extended label. 
+
+```{R}
+# Split columns of training data
+data.train <- data.train %>%
+      separate( col = raw, into = c("extended_label", "question"), sep = " ", extra = "merge") %>%
+      mutate(label = str_match(extended_label, '[A-Z]+(?=\\:)')) %>% 
+      select(question, label, extended_label) 
+
+
+# Split columns of test data
+data.test <- data.test %>%
+      separate( col = raw, into = c("extended_label", "question"), sep = " ", extra = "merge") %>%
+      mutate(label = str_match(extended_label, '[A-Z]+(?=\\:)')) %>%
+      select(question, label, extended_label)
+
+```
+
+### 2. Apply the same cleaning transforations as on the Quora dataset. 
+
+This is to be consistent between the datasets, and so we can learn a model on data that is similar to the data of the `Quora` dataset. 
+
+#### Replace special characters with characters you want to ultimately keep 
+
+```{R}
+# replace accented vowels with their unaccented equivalents
+accented <- c( "ã", "á", "ä", "å", "à", "ç", "é", "è", "í", "ï", "ì", "ö", "ô", "ó", "ò", "ð", "ü", "ú", "ù", "û", "ñ")
+unaccented <- c("a", "a", "a","a", "a", "c", "e", "e", "i", "i", "i", "o", "o", "o", "o", "o", "u", "u", "u","u", "n")
+
+for (i in 1:length(accented)){
+      data.train <- data.train %>%
+            mutate(question = str_replace_all(question, accented[i], unaccented[i]))
+}
+
+for (i in 1:length(accented)){
+      data.test <- data.test %>%
+            mutate(question = str_replace_all(question, accented[i], unaccented[i]))
+}
+
+# replace ’ with '
+data.train <- data.train %>% mutate(question = str_replace_all(question, "’", "'"))
+
+# replace '&' with 'and', and '=' with 'equals
+data.train <- data.train %>% mutate(question = str_replace_all(question, " & ", " and "),
+                     question = str_replace_all(question, "=", " equals "))
+
+# replace ’ with '
+data.test <- data.test %>% mutate(question = str_replace_all(question, "’", "'"))
+
+# replace '&' with 'and', and '=' with 'equals
+data.test <- data.test %>% mutate(question = str_replace_all(question, " & ", " and "),
+                     question = str_replace_all(question, "=", " equals "))
+
+```
+#### Fix common spelling errors and abbreviations (in the quora dataset)
+
+```{R}
+# two letter words I'm going to replace
+spelling.errs.2 <- c(" uk ", " os ", " eu ", " gb ", " fb ", " js ", " gf ")
+# replacements
+spelling.fixes.2 = c(" england ", " operating system ", " european union", " gigabyte ", " facebook ", " javascript ", " girlfriend ")
+
+# fix common 2 letter erors 
+for (i in 1:length(spelling.errs.2)){
+      data.train <- data.train %>%
+            mutate(question = str_replace_all(question, regex(spelling.errs.2[i], ignore_case = TRUE), spelling.fixes.2[i]))
+}
+
+# fix common 2 letter erors 
+for (i in 1:length(spelling.errs.2)){
+      data.test <- data.test %>%
+            mutate(question = str_replace_all(question, regex(spelling.errs.2[i], ignore_case = TRUE), spelling.fixes.2[i]))
+}
+```
+```{R}
+# three letter words I'm going to replace
+spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " u\\.s\\. ", " nyc " )
+spelling.fixes.3 <- c(" i am ", " america ", " america ", " america ", " new york city " )
+
+# Fix spelling errors
+for (i in 1:length(spelling.errs.3)){
+      data.train <- data.train %>%
+            mutate(question = str_replace_all(question, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i]))
+}
+
+
+# Fix spelling errors
+for (i in 1:length(spelling.errs.3)){
+      data.test <- data.test %>%
+            mutate(question = str_replace_all(question, regex(spelling.errs.3[i], ignore_case = TRUE), spelling.fixes.3[i]))
+}
+```
+
+
+
+#### Misc. spellling errors
+```{R}
+misc.errors <- c("π ", "([1-9][0-9]*)(k) ", " e\\-mail ", " cs ", " upvotes ", " calender ",
+                 " actived ", " demonitization ", " intially ", " quikly ", " programing ", " bestfriend ", 
+                 " the US ")
+misc.fixes <-  c(" pi ", "\\1 k ", " email ", " computer science ", " up votes ", " calendar ",
+                 " active ", " demonetization ", " initialy ", " quickly ", "programming ", " best friend ", " america ")
+
+```
+```{R}
+
+for (i in 1:length(misc.errors)){
+      data.train <- data.train %>%
+            mutate(question = str_replace_all(question, regex(misc.errors[i], ignore_case = TRUE),
+                                               regex(misc.fixes[i], ignore_case = TRUE))
+                   )
+}
+
+for (i in 1:length(misc.errors)){
+      data.test <- data.test %>%
+            mutate(question = str_replace_all(question, regex(misc.errors[i], ignore_case = TRUE),
+                                               regex(misc.fixes[i], ignore_case = TRUE))
+                   )
+}
+```
+
+#### Convert shorthand units to longhand units
+```{R}
+shorthand.units = c("m", "cm", "g","gm", "kg", "mg",
+                     "min" , "j", "deg", "hr", "hrs", 
+                    "in", "kcal", "kl", "kph", "kw", 
+                     "mm", "mpg", "nm",  "sec", "secs",
+                      "wk", "wks", "wpm", "yr", "yrs")
+
+longhand.units = c("meter", "centimeter", "gram", "gram", "kilogram", "miligram", 
+                   "minute", "joules", "degrees", "hour", "hours",
+                   "inch", "kilocalorie", "kiloliter", "kilomters per hour", "kilowatt",
+                   "milimeter", "miles per gallon", "nanometer", "second", "seconds",
+                   "week", "weeks", "words per minute", "year", "years"
+                   )
+```
+```{R}
+# regexes to match in each iteration
+rgxs = rep("", length(shorthand.units))
+for (i in 1:length(shorthand.units)){
+      rgxs[i] <- regex(paste('([0-9]+)(', shorthand.units[i], ' | ',shorthand.units[i], ' )', sep = ""), ignore_case = TRUE)
+}
+
+# convert shorthanded units to longhanded united values in data
+for (i in 1:length(shorthand.units)){
+      data.train <- data.train %>%
+            mutate(question = str_replace_all(question, regex(rgxs[i]), paste("\\1 ", longhand.units[i]," ",  sep = "")))
+}
+
+# convert shorthanded units to longhanded united values in data
+for (i in 1:length(shorthand.units)){
+      data.test <- data.test %>%
+            mutate(question = str_replace_all(question, regex(rgxs[i]), paste("\\1 ", longhand.units[i]," ",  sep = "")))
+}
+```
+
+
+#### Replace common abbreviations with longhand (would've -> would have)
+```{R}
+# pattern: can't -> can not 
+data.train <- data.train %>%
+      mutate(question = str_replace_all( question, regex("(can\'t )"), "can not "),
+             question = str_replace_all( question, regex("(won\'t )"), "will not "),
+            question = str_replace_all( question, regex("([a-z]+)(n\'t )"), "\\1 not "))
+
+# pattern: can't -> can not 
+data.test <- data.test %>%
+      mutate(question = str_replace_all( question, regex("(can\'t )"), "can not "),
+             question = str_replace_all( question, regex("(won\'t )"), "will not "),
+            question = str_replace_all( question, regex("([a-z]+)(n\'t )"), "\\1 not "))
+
+```
+
+Now, convert the suffix _-'ve_ translates to _ - have_
+```{R}
+# pattern: would've -> would have 
+data.train <- data.train %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'ve )"), "\\1 have "))
+data.test <- data.test %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'ve )"), "\\1 have "))
+
+```
+```{R}
+# pattern: you're -> you are
+data.train <- data.train %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'re )"), "\\1 are "))
+
+# pattern: you're -> you are
+data.test <- data.test %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'re )"), "\\1 are "))
+```
+```{R}
+# pattern: you'll -> you will
+data.train <- data.train %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'ll )"), "\\1 will "))
+
+# pattern: you'll -> you will
+data.test <- data.test %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'ll )"), "\\1 will "))
+```
+```{R}
+# pattern: they'd -> they would
+data.train <- data.train %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'d )"), "\\1 would "))
+
+# pattern: they'd -> they would
+data.test <- data.test %>%
+      mutate(
+            question = str_replace_all( question, regex("([a-z]+)(\'d )"), "\\1 would "))
+
+```
+
+
+#### Space out punctuation
+```{R}
+data.train <- data.train %>% mutate(question = str_replace_all(question, "([\\.\\,\\-\\?\"])", " \\1 "))
+
+data.test <- data.test %>% mutate(question = str_replace_all(question, "([\\.\\,\\-\\?\"])", " \\1 "))
+
+```
+
+#### Remove all non-alphanumeric characters
+
+```{R}
+# also remove any repeates spaces that may have come about
+data.train <- data.train %>% 
+      mutate(question = str_replace_all(question, regex("[^a-z0-9\\.\\,\\-\\+\'\\?]", ignore_case = TRUE), " "),
+             question = str_replace_all(question, regex("[ ]{2,}"), " "))
+
+data.test <- data.test %>% 
+      mutate(question = str_replace_all(question, regex("[^a-z0-9\\.\\,\\-\\+\'\\?]", ignore_case = TRUE), " "),
+             question = str_replace_all(question, regex("[ ]{2,}"), " "))
+
+
+```
+
+
+
+### Write to disk
+
+```{R}
+dim(data.train)
+dim(data.test)
+
+write.csv(data.train, "../data/TREC/processed/train.csv")
+write.csv(data.test, "../data/TREC/processed/test.csv")
+```
+
+```{R}
+head(data.train,10)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
