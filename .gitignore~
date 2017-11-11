@@ -97,8 +97,9 @@ ENV/
 
 *.csv
 *.bin
+*.xlsx
 *.vec
 data/
 feature_engineering/
-
+models/
 
