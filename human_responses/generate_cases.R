@@ -9,7 +9,7 @@ library(openxlsx)
 setwd("~/Desktop/quora/")
 
 # Load processed data
-all.data = read.csv("data/processed/train.csv")
+all.data = read.csv("data/train.csv")
 
 # get 5 different random samples of 40 questions (the samples do not overlap). 
 # Only keep the question pairs, the Row ID, and an empty column for the users response
