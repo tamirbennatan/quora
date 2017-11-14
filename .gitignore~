@@ -97,6 +97,7 @@ ENV/
 
 *.csv
 *.bin
+*subject_list.rtf
 *.xlsx
 *.vec
 data/

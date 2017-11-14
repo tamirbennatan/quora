@@ -27,7 +27,7 @@ data.test = data_frame(raw = readLines("../data/TREC/TREC_10.label.txt"))
 
 
 
-### 1. Split datasets into appropriate columns. 
+### 1.1 Split datasets into appropriate columns. 
 
 We want one column for the question, one for the short label, and one for the extended label. 
 
@@ -46,6 +46,26 @@ data.test <- data.test %>%
       select(question, label, extended_label)
 
 ```
+
+### 1.2 Convert Backticks to single-ticks.
+
+I've noticed that in this dataset, the first quotation mark in every quoted phrase is replace by two backticks. The first quote in single quotes is replaced with a single backtick 
+
+Although this is actually quite nice, I'll convert these to quotation marks and single quotes, respectively, to be consistent with the Quora datset. 
+
+Also, some words like _what's_ are written as _what 's_. or _societies'_ is written as _socienties '_. I'll fix that stuff as well.
+
+```{R}
+data.train <- data.train %>%
+      mutate(question = str_replace_all(pattern = '``', replacement = '"', question)) %>%
+      mutate(question = str_replace_all(pattern = '`', replacement = "'", question)) %>%
+      mutate(question = str_replace_all(pattern = regex("(?<=[a-z]) 's"), replacement = "'s", question)) %>% 
+      mutate(question = str_replace_all(pattern = regex("(?<=[a-z]s) ' "), replacement = "' ", question)) %>% 
+      filter(!is.null(str_match("s ' ", question) ))
+
+```
+
+
 
 ### 2. Apply the same cleaning transforations as on the Quora dataset. 
 

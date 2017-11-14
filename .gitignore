@@ -103,4 +103,5 @@ ENV/
 data/
 feature_engineering/
 models/
-
+*.RData
+*.Rhistory
