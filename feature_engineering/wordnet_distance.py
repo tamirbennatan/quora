@@ -5,7 +5,7 @@ Functions for computing semantic similarity of sentences using WordNet similarit
 - Much code taken from this blog post: http://nlpforhackers.io/wordnet-sentence-similarity/
 """
 
-import nltk.wordnet as wn
+from nltk.corpus import wordnet as wn
 from nltk import word_tokenize, pos_tag
 
 # ---------------------------------------------------------------
@@ -36,7 +36,7 @@ def penn_to_wn(tag):
 
 # get the most common synset for a tagged word from WordNet. 
 def tagged_to_synset(word, tag):
-	# get the tag of that synset
+    # get the tag of that synset
     wn_tag = penn_to_wn(tag)
     if wn_tag is None:
         return None
@@ -76,8 +76,10 @@ def path_similarity(sentence1, sentence2):
  
     # For each word in the first sentence
     for synset in synsets1:
+        # isolate the part of speech 
+        synset_pos = synset.pos()
         # Get the similarity value of the most similar word in the other sentence
-        best_score = max([synset.path_similarity(ss) for ss in synsets2])
+        best_score = max([synset.path_similarity(ss) for ss in synsets2 if ss.pos() == synset_pos])
  
         # Check that the similarity could have been computed
         if best_score is not None:
@@ -85,9 +87,13 @@ def path_similarity(sentence1, sentence2):
             count1 += 1
             
     for synset in synsets1:
-        # Get the similarity value of the most similar word in the other sentence
-        best_score = max([synset.path_similarity(ss) for ss in synsets1])
- 
+        try:
+            # isolate the part of speech 
+            synset_pos = synset.pos()
+            # Get the similarity value of the most similar word in the other sentence
+            best_score = max([synset.path_similarity(ss) for ss in synsets1 if ss.pos() == synset_pos])
+        except:
+            best_score = None
         # Check that the similarity could have been computed
         if best_score is not None:
             score2 += best_score
@@ -170,8 +176,13 @@ def wup_similarity(sentence1, sentence2):
  
     # For each word in the first sentence
     for synset in synsets1:
-        # Get the similarity value of the most similar word in the other sentence
-        best_score = max([synset.wup_similarity(ss) for ss in synsets2])
+        try:
+            # isolate the part of speech 
+            synset_pos = synset.pos()
+            # Get the similarity value of the most similar word in the other sentence
+            best_score = max([synset.wup_similarity(ss) for ss in synsets2 if ss.pos() == synset_pos])
+        except:
+            best_score = None
  
         # Check that the similarity could have been computed
         if best_score is not None:
@@ -179,8 +190,13 @@ def wup_similarity(sentence1, sentence2):
             count1 += 1
             
     for synset in synsets1:
-        # Get the similarity value of the most similar word in the other sentence
-        best_score = max([synset.wup_similarity(ss) for ss in synsets1])
+        try:
+            # isolate the part of speech 
+            synset_pos = synset.pos()
+            # Get the similarity value of the most similar word in the other sentence
+            best_score = max([synset.wup_similarity(ss) for ss in synsets1 if ss.pos() == synset_pos])
+        except:
+            best_score = None
  
         # Check that the similarity could have been computed
         if best_score is not None:
