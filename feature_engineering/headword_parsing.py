@@ -79,7 +79,7 @@ if not DEMO:
 
     get_headword('What is the state flower of California?')
 
-    doc3 = nlp('Is chocolate milk good for you?')
+    doc3 = nlp('What should I do to be a great geologist?')
     for token in doc3:
         print(token.text, token.dep_, token.head.text, token.head.pos_,
               [child for child in token.children])
@@ -93,16 +93,19 @@ if not DEMO:
     get_headword('Where does the new space come from?')
 
 
-df.head(50)
+    df.head(50)
 
-get_headword(df['question1'][40])
-get_headword(df['question2'][40])
+    get_headword(df['question1'][40])
+    get_headword(df['question2'][40])
 
-df = df.iloc[0:50]
-sam1 = df.iloc[0:50].apply(lambda x: get_headword(x['question1']), axis=1)
-sam2 = df.iloc[0:50].apply(lambda x: get_headword(x['question2']), axis=1)
-df['headword_q1'] = sam1
-df['headword_q2'] = sam2
+    df = df.iloc[0:50]
+    sam1 = df.apply(lambda x: get_headword(x['question1']), axis=1)
+    sam2 = df.apply(lambda x: get_headword(x['question2']), axis=1)
+    df['headword_q1'] = sam1
+    df['headword_q2'] = sam2
+
+    get_headword('')
+
 
 # In[]:
 # Headword extraction
