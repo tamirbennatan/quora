@@ -178,7 +178,7 @@ We found that the XGB model, when trained on the baseline featurees, had perform
 \subsection{Tf-Idf Features}
 
 
-Suppose that we were only allowed to compare one word from each question in a pair to determine if the questions are duplicates, but we had a choice of which word to compare. Which words should we choose? We would reasonably want to choose the most important word from each question, or the words which are most particular to each question. 
+Suppose that we were only allowed to compare one word from each question in a pair to determine if the questions are duplicates, but we had a choice of which words to compare. Which words should we choose? We would reasonably want to choose the most important word from each question, or the words which are most particular to each question. 
 
 For example, in the fabricated question pair:
 \begin{enumerate}
@@ -208,7 +208,7 @@ $$
 {Feature}_1 = ||Embed(w_1^*) - Embed(w_2^*)||_2 \\
 $$
 $$
-{Feature}_2 = \frac{\langle Embed(w_1^*), Embed(w_2^* \rangle}{||Embed(w_1^*)||_2||Embed(w_2^*)||_2} \\
+{Feature}_2 = \frac{\langle Embed(w_1^*), Embed(w_2^*) \rangle}{||Embed(w_1^*)||_2||Embed(w_2^*)||_2} \\
 $$
 Where
 $$
@@ -218,10 +218,10 @@ $$
 The third and fourth features measure the total Tf-Idf weight of the words the questions in a pair share, and the total weight of the words that they don’t share: 
 
 $$
-{Feature}_3 = \sum_{w \in d_1 \cap d_2}{Tf\text{-}Idf(w, d_1) + Tf\text{-}Idf(w, d_2)} \\
+{Feature}_3 = \sum_{w \in \{d_1 \cap d_2\}}{Tf\text{-}Idf(w, \{d_1 \cap d_2\})} \\
 $$
 $$
-{Feature}_4 = \sum_{w \in d_1 \bigtriangleup  d_2}\sum_{i = 1}^2{Tf\text{-}Idf(w, d_i)\mathbbm{1}(w \in d_i) }
+{Feature}_4 = \sum_{w \in \{d_1 \bigtriangleup  d_2\}}\sum_{i = 1}^2{Tf\text{-}Idf(w, d_i)\mathbbm{1}(w \in d_i) }
 $$
 
 \subsection{Question Classifcation Features}
