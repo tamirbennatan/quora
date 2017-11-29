@@ -3,11 +3,12 @@
 \BOOKMARK [1][-]{section.3}{QUORA DATA SET}{}% 3
 \BOOKMARK [1][-]{section.4}{METHOD}{}% 4
 \BOOKMARK [2][-]{subsection.4.1}{Baseline Features and Models}{section.4}% 5
-\BOOKMARK [2][-]{subsection.4.2}{Units}{section.4}% 6
-\BOOKMARK [2][-]{subsection.4.3}{Equations}{section.4}% 7
-\BOOKMARK [2][-]{subsection.4.4}{Some Common Mistakes}{section.4}% 8
-\BOOKMARK [1][-]{section.5}{USING THE TEMPLATE}{}% 9
-\BOOKMARK [2][-]{subsection.5.1}{Headings, etc}{section.5}% 10
-\BOOKMARK [2][-]{subsection.5.2}{Figures and Tables}{section.5}% 11
-\BOOKMARK [1][-]{section.6}{CONCLUSIONS}{}% 12
-\BOOKMARK [1][-]{section*.3}{References}{}% 13
+\BOOKMARK [2][-]{subsection.4.2}{Tf-Idf Features}{section.4}% 6
+\BOOKMARK [2][-]{subsection.4.3}{Question Classifcation Features}{section.4}% 7
+\BOOKMARK [2][-]{subsection.4.4}{Equations}{section.4}% 8
+\BOOKMARK [2][-]{subsection.4.5}{Some Common Mistakes}{section.4}% 9
+\BOOKMARK [1][-]{section.5}{USING THE TEMPLATE}{}% 10
+\BOOKMARK [2][-]{subsection.5.1}{Headings, etc}{section.5}% 11
+\BOOKMARK [2][-]{subsection.5.2}{Figures and Tables}{section.5}% 12
+\BOOKMARK [1][-]{section.6}{CONCLUSIONS}{}% 13
+\BOOKMARK [1][-]{section*.3}{References}{}% 14

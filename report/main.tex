@@ -27,8 +27,12 @@
 \usepackage{array,multirow}
 \usepackage{hyperref}
 \usepackage{color}
-
-
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\definecolor{light-gray}{gray}{0.95}
+\newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\usepackage{bbm}
 
 
 \title{\LARGE \bf
@@ -93,7 +97,7 @@ Our work differs from that of the top competitors in that our main objective was
 
 \section{QUORA DATA SET}
 
-The dataset released by Quora consists of 404290 pairs of questions posted to the site. 36.9\% of pairs are labeled as duplicates. There are no missing values. 
+The dataset released by Quora consists of 404290 pairs of questions posted to the site. 36.9\% of pairs are labeled as duplicates. There are no missing values [Table 1].  
 
 \begin{table}[]
 \centering
@@ -140,11 +144,11 @@ Character features				   & Number of character in each question \\\cline{2-2}
 Edit distance 		   & 	Partial string matches (with/without stopwords)			\\\cline{2-2}
 variations \footnotemark			& Token-wise string matches \\\cline{2-2}
 				 				& Type-wise string matches \\\cline{2-2}
- 								& Type-sorted string matches \\\hline
+ 								& Type-sorted string matches \\
 
 \hline
 
-Sentence embedding similarity \footnotemark	   & Vector similarities using Euclidean, Cosine, Cityblock, Braycurtis and Jaccard distances\\ 
+Sentence embedding similarity \footnotemark	   & Vector similarities of sentence embeddings using Euclidean, Cosine, Cityblock, Bray-Curtis and Jaccard distances\\ 
 				   	
 \hline
 
@@ -153,12 +157,74 @@ Sentence embedding similarity \footnotemark	   & Vector similarities using Eucli
 
 
 
-\footnotetext{Edit distance variations were computed using the python \emph{fuzzywuzzy} package. More information on these metrics can be found \href{http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/}{\color{blue} here.}}
+\footnotetext[1]{Edit distance variations were computed using the python \emph{fuzzywuzzy} package. More information on these metrics can be found \href{http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/}{\color{blue} here.}}
 
-\footnotetext{Vector similarities were calculated using the python \emph{scipy} package. More information on these metrics can be found \href{https://docs.scipy.org/doc/scipy/reference/spatial.distance.html}{\color{blue} here.}}
+\footnotetext[2]{Vector similarities were calculated using the python \emph{scipy} package. More information on these metrics can be found \href{https://docs.scipy.org/doc/scipy/reference/spatial.distance.html}{\color{blue} here.}}
 
 
-\subsection{Units}
+We then split the dataset into training and test splits, which we kept consistent in all further experiments. 
+We trained Logistic Regression and Extremely Boosted Decision Trees (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline models. 
+
+To test whether logistic regression and XGB models are adequate choices for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared the Sequence-to-Sequence LSTM the  Manhattan Siamese LSTM (MaLSTM) archetectures, and found that the MaLSTM performed better. (Mueller et al; 2016). 
+
+The MaLSTM is a siamese neural network which emits a prediction by taking the Manhattan similarity of of the vector representations of two inputs  (Mueller et al; 2016), where the Manhattan similarity of two vectors $v_1$ and $v_2$ is defined:
+$$
+    ManhattanSim(v_1, v_2) = \exp(-||{v_1 - v_2||_1})  \eqno{(1)}
+$$
+The inputs to the MaLSTM were fastText word embeddings of the words in each question. More details on our chosen architecture can be found in Appendix 1. 
+
+We found that the XGB model, when trained on the baseline featurees, had performance similar to that of the MaLSTM. Thus, we concluded that the XGB model has the capacity to adequately perform in the question duplicate detection task. 
+
+\subsection{Tf-Idf Features}
+
+
+Suppose that we were only allowed to compare one word from each question in a pair to determine if the questions are duplicates, but we had a choice of which word to compare. Which words should we choose? We would reasonably want to choose the most important word from each question, or the words which are most particular to each question. 
+
+For example, in the fabricated question pair:
+\begin{enumerate}
+\item \emph{Who is the president of the United States?} 
+\item  \emph{What is the highest paying government position?}
+\end{enumerate}
+We would probably derive more insight into the similarity/dissimilarity of these two questions by analyzing the words \emph{president} and \emph{government}, instead of more commonly occurring words, like \emph{who} and \emph{highest}.
+
+We capture this intuition by creating a set of features that incorporate the Tf-Idf scores of each word. We used Scikit-Learn’s \code{TfidfTransformer} class  (Pedregosa et al.; 2011) to compute the Tf-Idf of a word $w$ in document $d$ using the formula:
+
+$$
+Tf\text{-}Idf(w, d) = Tf(w,d) * Idf(w) \eqno{(2)}
+$$
+Where $Tf(w,d)$ is the number of times word $w$ appers in document $d$ (term frequency), and $Idf(w)$ is defined:
+$$
+Idf(w) = \log{\frac{1 + n_d}{1 + df(w)}} + 1  \eqno{(3)}
+$$
+Where $n_d$ is the number of documents \footnote{Documents correspond with questions, in this context.} in the corpus, and $df(w)$ is the number of documents in the corpus that contain the word $w$. 
+
+The Tf-Idf weight of a word in a document will be high if 1) the word appears many times in  that document, and 2) the word has low document frequency. It serves as a natural heuristic for modeling the relative importance of a word within a document. Tf-Idf weights are useful for many NLP tasks; in fact, variations of this scoring scheme are used to as term weights in nearly all vector space information retrieval models (Jurafsky \& Martin; 2012). 
+
+The Tf-Idf score of a word in a document will be high if 1) the word appears many times in  that document, and 2) the word has low document frequency. It serves as a natural heuristic for modeling the relative importance of a word within a document. Tf-Idf weights are useful for many NLP tasks; in fact, variations of this scoring scheme are used as term weights in nearly all vector space information retrieval models (Jurafsky \& Martin; 2012).  
+
+Thus, we used Tf-Idf scores to extract four new features. The first two attempt to measure similarity of the “most important” word of each question in a pair. To do so, we find the word with the highest Tf-Idf weight in each question, extract fastText word embedding vector of each of these words, and compute the distance between these vectors. We used cosine distance for one feature and embedding distance for the second. I.e:
+
+$$
+{Feature}_1 = ||Embed(w_1^*) - Embed(w_2^*)||_2 \\
+$$
+$$
+{Feature}_2 = \frac{\langle Embed(w_1^*), Embed(w_2^* \rangle}{||Embed(w_1^*)||_2||Embed(w_2^*)||_2} \\
+$$
+Where
+$$
+(w_1^*,w_2^*) = \argmax_{w_1 \in d_1, w_2 \in d_2}{\big(Tf\text{-}Idf(w_1, d_1),  Tf\text{-}Idf(w_2, d_2)\big)}
+$$
+
+The third and fourth features measure the total Tf-Idf weight of the words the questions in a pair share, and the total weight of the words that they don’t share: 
+
+$$
+{Feature}_3 = \sum_{w \in d_1 \cap d_2}{Tf\text{-}Idf(w, d_1) + Tf\text{-}Idf(w, d_2)} \\
+$$
+$$
+{Feature}_4 = \sum_{w \in d_1 \bigtriangleup  d_2}\sum_{i = 1}^2{Tf\text{-}Idf(w, d_i)\mathbbm{1}(w \in d_i) }
+$$
+
+\subsection{Question Classifcation Features}
 
 \begin{itemize}
 
@@ -213,33 +279,6 @@ Text heads organize the topics on a relational, hierarchical basis. For example,
 
 Positioning Figures and Tables: Place figures and tables at the top and bottom of columns. Avoid placing them in the middle of columns. Large figures and tables may span across both columns. Figure captions should be below the figures; table heads should appear above the tables. Insert figures and tables after they are cited in the text. Use the abbreviation ÒFig. 1Ó, even at the beginning of a sentence.
 
-\begin{table}[h]
-\caption{An Example of a Table}
-\label{table_example}
-\begin{center}
-\begin{tabular}{|c||c|}
-\hline
-One & Two\\
-\hline
-Three & Four\\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
-
-
-
-
-   \begin{figure}[thpb]
-      \centering
-      \framebox{\parbox{3in}{We suggest that you use a text box to insert a graphic (which is ideally a 300 dpi TIFF or EPS file, with all fonts embedded) because, in an document, this method is somewhat more stable than directly inserting a picture.
-}}
-      %\includegraphics[scale=1.0]{figurefile}
-      \caption{Inductance of oscillation winding on amorphous
-       magnetic core versus DC bias magnetic field}
-      \label{figurelabel}
-   \end{figure}
-   
 
 Figure Labels: Use 8 point Times New Roman for Figure labels. Use words rather than symbols or abbreviations when writing Figure axis labels to avoid confusing the reader. As an example, write the quantity ÒMagnetizationÓ, or ÒMagnetization, MÓ, not just ÒMÓ. If including units in the label, present them within parentheses. Do not label axes only with units. In the example, write ÒMagnetization (A/m)Ó or ÒMagnetization {A[m(1)]}Ó, not just ÒA/mÓ. Do not label axes with a ratio of quantities and units. For example, write ÒTemperature (K)Ó, not ÒTemperature/K.Ó
 
@@ -248,7 +287,7 @@ Figure Labels: Use 8 point Times New Roman for Figure labels. Use words rather t
 A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
-                         game         % on the last page of the document manually. It shortens
+                                  % on the last page of the document manually. It shortens
                                   % the textheight of the last page by a suitable amount.
                                   % This command does not take effect until the next page
                                   % so it should come on the page before the last. Make
@@ -265,7 +304,18 @@ A conclusion section is not required. Although a conclusion may review the main 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{APPENDIX}
 
-Appendixes should appear before the acknowledgment.
+   \begin{figure}[thpb]
+      \centering
+      \framebox{\parbox{3in}{
+      \includegraphics[scale=.2]{MaLSTM}
+		\centering
+      }}
+      %\includegraphics[scale=1.0]{figurefile}
+      \caption{Manhattan Siamese LSTM archetecture, annotated with output dimension at each layer. Weights of each LSTM layer are tied (Siamese).}
+      \label{figurelabel}
+   \end{figure}
+
+
 
 \section*{STATEMENT OF CONTRIBUTION}
 
@@ -294,7 +344,7 @@ Communications of the ACM Vol. 38, No. 11: 39-41.
 \bibitem{c8} Jonas Mueller and Aditya Thyagarajan. Siamese Recurrent Architectures for Learning Sentence Similarity. In AAAI, 2016
 \bibitem{c9} Rocktäschel, Grefenstette, Hermann, Kočiský and Blunsom. Reasoning about Entailment with Neural Attention. in: International Conference on Learning Representations (ICLR). 2016
 \bibitem{c10} A. Joulin, E. Grave, P. Bojanowski, T. Mikolov, Bag of Tricks for Efficient Text Classification
-
+\bibitem{c11} Scikit-learn: Machine Learning in Python, Pedregosa et al., JMLR 12, pp. 2825-2830, 2011.
 
 
 \end{thebibliography}
