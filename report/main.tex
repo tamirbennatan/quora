@@ -32,7 +32,10 @@
 \definecolor{light-gray}{gray}{0.95}
 \newcommand{\code}[1]{\colorbox{light-gray}{\texttt{#1}}}
 \DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\maxU}{max}
+
 \usepackage{bbm}
+
 
 
 \title{\LARGE \bf
@@ -205,10 +208,10 @@ The Tf-Idf score of a word in a document will be high if 1) the word appears man
 Thus, we used Tf-Idf scores to extract four new features. The first two attempt to measure similarity of the “most important” word of each question in a pair. To do so, we find the word with the highest Tf-Idf weight in each question, extract fastText word embedding vector of each of these words, and compute the distance between these vectors. We used cosine distance for one feature and embedding distance for the second. I.e:
 
 $$
-{Feature}_1 = ||Embed(w_1^*) - Embed(w_2^*)||_2 \\
+{Feature}_1 = ||Embed(w_1^*) - Embed(w_2^*)||_2 \eqno(4)
 $$
 $$
-{Feature}_2 = \frac{\langle Embed(w_1^*), Embed(w_2^*) \rangle}{||Embed(w_1^*)||_2||Embed(w_2^*)||_2} \\
+{Feature}_2 = \frac{\langle Embed(w_1^*), Embed(w_2^*) \rangle}{||Embed(w_1^*)||_2||Embed(w_2^*)||_2} \eqno(5)
 $$
 Where
 $$
@@ -218,33 +221,102 @@ $$
 The third and fourth features measure the total Tf-Idf weight of the words the questions in a pair share, and the total weight of the words that they don’t share: 
 
 $$
-{Feature}_3 = \sum_{w \in \{d_1 \cap d_2\}}{Tf\text{-}Idf(w, \{d_1 \cap d_2\})} \\
+{Feature}_3 = \sum_{w \in \{d_1 \cap d_2\}}{Tf\text{-}Idf(w, \{d_1 \cap d_2\})} \eqno(6)
 $$
 $$
-{Feature}_4 = \sum_{w \in \{d_1 \bigtriangleup  d_2\}}\sum_{i = 1}^2{Tf\text{-}Idf(w, d_i)\mathbbm{1}(w \in d_i) }
+{Feature}_4 = \sum_{w \in \{d_1 \bigtriangleup  d_2\}}\sum_{i = 1}^2{Tf\text{-}Idf(w, d_i)\mathbbm{1}(w \in d_i) } \eqno(7)
 $$
 
 \subsection{Question Classifcation Features}
 
-\begin{itemize}
+IR-based question answering (QA) systems attempt to find short segments of text that adequately answer a user’s question by querying a database or searching the web (Jurafsky \& Martin; 2017). These systems tend to perform better if they first constrain the answer candidates using a semantic categorization of the expected answer of an input question (Li \& Roth; 2002).  
 
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as Ò3.5-inch disk driveÓ.
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: ÒWb/m2Ó or Òwebers per square meterÓ, not Òwebers/m2Ó.  Spell out units when they appear in text: Ò. . . a few henriesÓ, not Ò. . . a few HÓ.
-\item Use a zero before decimal points: Ò0.25Ó, not Ò.25Ó. Use Òcm3Ó, not ÒccÓ. (bullet list)
+For example, when considering the question:
+\begin{center}
+\emph{Who is the president of the United States?}
+\end{center}
+A QA system is likely to return noisy responses if it considers every noun-phrase in a knowledge base. Instead, it should only consider noun-phrases correspond to humans.
 
-\end{itemize}
+Using the Text Retrieval Conference (TREC) question dataset (Voorhees; 2002), Dan Roth and Li Xin (2005) developed a hierarchical taxonomy for classifying the answer type of a question; this taxonomy consists of 6 coarse categories, and 50 fine sub categories. They then annotated the 6000 questions in the TREC dataset using this taxonomy. The coarse answer categories are LOCATION, DESCRIPTION, ENTITY, NUMERIC, HUMAN, and ABBREVIATION, and some examples of fine categories are NUMERIC:Date and NUMERIC:Money. The task of predicting the answer type of a question is broadly termed Question Classification. 
+
+We hypothesized that knowing the answer types of the questions in the Quora dataset would be useful for the question duplicate detection problem, since two questions are more likely to have duplicate intent if they share the same answer type. Our next feature set tests this hypothesis. 
+
+We built 5 LSTM models, and trained them on the TREC dataset to predict the coarse categories of each question. The models differed in their use of dropout between layers, recurrent droput within LSTM cells, the type of the output layer they used their trainable parameters, but they all consisted of three layers:
+\begin{enumerate}
+\item Embedding layer (using pretrained fastText 300-dimensional embeddings)
+\item LSTM layer of output dimension 50
+\item Output layer (of varying types) of dimension 6.
+\end{enumerate}
+The details of the different architectures are in Table 3. Note that we trained these LSTMS on the entire TREC dataset without the use of the development set,  so we make no statement about the performance of these models in the question classification problem. 
 
 
-\subsection{Equations}
+\begin{table}[]
+\centering
+\caption{Archetecture details of LSTM question classifiers }
+\label{my-label}
+\begin{tabular}{|p{10mm}|p{10mm}|p{10mm}|p{10mm}|p{14mm}|p{8mm}|}
+\hline
+Model  & Output Layer & Dropout  & Recurrent Dropout & Embeddings Trainable? & Input Length \\ \hline
+LSTM 1 & Dense             & 20\%                   & -                 & NO                    & 10           \\
+LSTM 2 & Dense             & -                      & 20\%              & NO                    & 10           \\
+LSTM 3 & LSTM              & -                      & 20\%              & NO                    & 10           \\
+LSTM 4 & LSTM              & 20\%                   & 20\%              & YES                   & 10           \\
+LSTM 5 & LSTM              & -                      & 20\%              & NO                    & 6            \\ \hline
+\end{tabular}
+\end{table}
 
-The equations are an exception to the prescribed specifications of this template. You will need to determine whether or not your equation should be typed using either the Times New Roman or the Symbol font (please no other font). To create multileveled equations, it may be necessary to treat the equation as a graphic and insert it into the text after your paper is styled. Number equations consecutively. Equation numbers, within parentheses, are to position flush right, as in (1), using a right tab stop. To make your equations more compact, you may use the solidus ( / ), the exp function, or appropriate exponents. Italicize Roman symbols for quantities and variables, but not Greek symbols. Use a long dash rather than a hyphen for a minus sign. Punctuate equations with commas or periods when they are part of a sentence, as in
+We used the models to predict the answer type of the questions in the the Quora dataset. Then, considering each LSTM model separately, we added these predictions to our baseline features, and measured the increase in our baseline XGB model using 3-fold cross validation. We also tried an ensemble approach, where the predicted class of each question was the class that was predicted the most frequently amongst the 5 LSTM models.
 
+We found that the ensemble predictions of each question in a pair, as well as a binary feature which indicates if these predictions coincide, increased the performance of our baseline XGB model the most (in terms of reduction of log-loss). These are the features in the second feature set which we studied. 
 $$
-\alpha + \beta = \chi \eqno{(1)}
+Feature_5 = \text{\{Question 1 Answer Type Prediction\}}
 $$
+$$
+Feature_6 = \text{\{Question 2 Answer Type Prediction\}}
+$$
+$$
+Feature_7 = \mathbbm{1}(\text{Answer Type Predictions Agree})\quad
+$$
+\subsection{Sentence Semantic Similarity Scores}
 
-Note that the equation is centered using a center tab stop. Be sure that the symbols in your equation have been defined before or immediately following the equation. Use Ò(1)Ó, not ÒEq. (1)Ó or Òequation (1)Ó, except at the beginning of a sentence: ÒEquation (1) is . . .Ó
+Our final feature set uses a framework for measuring the semantic similarity of short texts proposed by Mihalcea et al (2006). This framework models the similarity of two texts as a function of the similarities of their component words and the specificity of each word. Word-to-word similarities are measured with respect to a semantic knowledge base (e.g. WordNet.)
+
+Given a word-to-word similarity metric, $Sim(w_1, w_2)$, and two texts $T_1,$ $T_2$, the semantic similarity score of these two texts is computed by:
+\begin{enumerate}
+\item For each word $w \in T_1$, find the word $w^* \in T_2$ which maximizes $Sim(w, w^*)$.
+\item Apply this same process to determine the words in $T_1$ that have the highest similarity to the words in $T_2$. 
+\item Sum up the similarities (weighted a measure of specificity, such as $Idf$ $(3)$), and normalize for the length of the sequences. 
+\end{enumerate}
+Note that words in one text are only compared to words in the other text \emph{of the same part of speech}, as many knowledge-based similarity measures cannot be applied across parts of speech (Mihalcea et al; 2006)
+
+\begin{gather*} \tag{8}
+SimText(T_1,T_2) = \\ \frac{1}{2}\Big( \frac{\sum_{w \in T_1}{\maxU_{w^* \in T_2}Sim(w,w^*)Idf(w)}}{\sum_{w \in T_1}Idf(w)} \\ + \frac{\sum_{w \in T_2}{\maxU_{w^* \in T_1}Sim(w,w^*)Idf(w)}}{\sum_{w \in T_2}Idf(w)} \Big)
+\end{gather*}
+This framework has the convenient properties of symmetry $SimText(T_1, T_2)$ = $SimText(T_2, T_1)$, and that the range of the text similarity scores is the same as that of the word-to-word similarity measure used. 
+
+We used the python NLTK package for part-of-speech tagging (Bird et al; 2009). We implemented this framework using three similarity metrics available via NLTK’s WordNet interface - path similarity, Leacock-Chodorow similarity (Leacock \& Chodorow; 1998) and Wu-Palmer similarity (Wu \& Palmer; 1994). 
+
+We implemented one implication of this framework. First, we removed the dependency on $Idf$ scores in (4), and normalized by taking the average of the word-to-word similarities:
+
+\begin{gather*} \tag{9}
+SimText_{simplified}(T_1,T_2) = \\ \frac{1}{2}\Big( \frac{\sum_{w \in T_1}{\maxU_{w^* \in T_2}Sim(w,w^*)}}{|T_1|} \\ + \frac{\sum_{w \in T_2}{\maxU_{w^* \in T_1}Sim(w,w^*)}}{|T_2|} \Big)
+\end{gather*}
+We made this simplification to reduce the correlation between these similarity scores and the Tf-Idf features proposed in section 4.B - which also depend on Idf scores.
+
+We also extended this model by using a word-to-word similarity score based neural embeddings. Using pre-trained GloVe word embeddings (Pennington et al.; 2014) available through the SpaCy python library, we used the cosine similarity (5) of the embeddings of two words as the similarity function $Sim(w_1,w_2)$ in (8) and (9). 
+
+Using 3-fold cross validation, we added different subsets of these text-to-text similarity scores to our baseline feature set, and studied resulting boost in our baseline XGB model performance. Since the text-to-text scores are highly correlated when using path similarity, Leacock-Chodorow similarity and Wu-Palmer similarity as $Sim(w_1, w_2)$, we only tested one of these scores at a time. 
+
+We found that including two semantic similarity scores, calculated using the simplified scheme (9) using Leacock-Chodorow and Cosine distance as $Sim(w_1, w_2)$, resulted in the largest increase in performance in our baseline model. Thus, the third and final feature set we propose consists of these two features.
+
+\begin{gather*} \tag{10}
+Feature_{10} = \{SimText_{Simplified}(Q_1, Q_2) \\ \text{where } Sim(w_1, w_2) \equiv \text{Leacock-Chodorow Similarity}\}
+\end{gather*}
+\begin{gather*} \tag{11}
+Feature_{11} = \{SimText_{Simplified}(Q_1, Q_2) \\ \text{where } Sim(w_1, w_2) \equiv \text{Cosine Distance (GloVe Embeddings)}\}
+\end{gather*}
+
+
 
 \subsection{Some Common Mistakes}
 \begin{itemize}
@@ -345,8 +417,10 @@ Communications of the ACM Vol. 38, No. 11: 39-41.
 \bibitem{c9} Rocktäschel, Grefenstette, Hermann, Kočiský and Blunsom. Reasoning about Entailment with Neural Attention. in: International Conference on Learning Representations (ICLR). 2016
 \bibitem{c10} A. Joulin, E. Grave, P. Bojanowski, T. Mikolov, Bag of Tricks for Efficient Text Classification
 \bibitem{c11} Scikit-learn: Machine Learning in Python, Pedregosa et al., JMLR 12, pp. 2825-2830, 2011.
-
-
+\bibitem{c12} Xin Li and Dan Roth, (2005). Learning question classifiers: The role of semantic information. Journal of Natural Language Engineering, 11(4).
+\bibitem{Bird, Steven, Edward Loper and Ewan Klein (2009). Natural Language Processing with Python.  O'Reilly Media Inc.}
+\bibitem{Wu, Z., and Palmer, M. 1994. Verb semantics and lexical selection. In Proceedings of the Annual Meeting of the Association for Computational Linguistics.}
+\bibitem{Leacock, C., and Chodorow, M. 1998. Combining local context and WordNet sense similarity for word sense identification. In WordNet, An Electronic Lexical Database. The MIT Press.}
 \end{thebibliography}
 
 
