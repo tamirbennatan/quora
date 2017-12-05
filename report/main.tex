@@ -38,7 +38,7 @@
 \usepackage[table,xcdraw]{xcolor}
 \usepackage[flushleft]{threeparttable}
 \usepackage[utf8]{inputenc}
-
+\usepackage{capt-of}
 
 
 \title{\LARGE \bf
@@ -299,7 +299,7 @@ This framework has the convenient properties of symmetry: $SimText(T_1, T_2)$ = 
 
 We used the python NLTK package for part-of-speech tagging (Bird et al; 2009). We implemented this framework using three similarity metrics available via NLTK’s WordNet interface - path similarity, Leacock-Chodorow similarity (Leacock \& Chodorow; 1998) and Wu-Palmer similarity (Wu \& Palmer; 1994). 
 
-We implemented one implication of this framework. First, we removed the dependency on $Idf$ scores in (4), and normalized by taking the average of the word-to-word similarities:
+We also implemented a simplified version of this framework by removing the dependency on $Idf$ scores in (4):
 
 \begin{gather*} \tag{9}
 SimText_{simplified}(T_1,T_2) = \\ \frac{1}{2}\Big( \frac{\sum_{w \in T_1}{\maxU_{w^* \in T_2}Sim(w,w^*)}}{|T_1|} \\ + \frac{\sum_{w \in T_2}{\maxU_{w^* \in T_1}Sim(w,w^*)}}{|T_2|} \Big)
@@ -322,7 +322,7 @@ Feature_{11} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \
 
 \section{RESULTS}
 
-To measure the importance of each of these feature sets, we trained logistic regression and XGB models on all the features described above, using 3-fold cross validation to tune hyperparameters. We then removed different groups subsets of the Tf-Idf, question classification and semantic scoring feature sets, and re-tuned the models’ hyperparameters. We then used these models to predict the test-set labels. The prediction accuracy for the resulting XGB and Logistic Regression classifiers are summarized in table 4, as well as those of our baseline classifiers described in section 4.A. 
+To measure the importance of each of these feature sets, we trained logistic regression and XGB models on all the features described above, using 3-fold cross validation to tune hyperparameters. We then removed different groups subsets of the Tf-Idf, question classification and semantic scoring feature sets, and re-tuned the models’ hyperparameters. We then used these models to predict the test-set labels. The prediction accuracy for the resulting models are summarized in table 4, as well as those of our baseline classifiers described in section 4.A. We limit our anaysis to the XGB model results, as these models performed much better than the logistic regression classifiers. 
 
 % Please add the following required packages to your document preamble:
 % \usepackage[table,xcdraw]{xcolor}
@@ -349,9 +349,27 @@ XGB Test Set Accuracy                                                           
 \end{threeparttable}
 \end{table*}
 
+\begin{figure*}[t]
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{full_bars}
+  \captionof{figure}{A figure}
+  \label{fig:test1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1\linewidth]{no_tfidf_bars}
+  \captionof{figure}{Another figure}
+  \label{fig:test2}
+\end{minipage}
+\end{figure*}
+
 \subsection{Headings, etc}
 
 Text heads organize the topics on a relational, hierarchical basis. For example, the paper title is the primary text head because all subsequent material relates and elaborates on this one topic. If there are two or more sub-topics, the next level head (uppercase Roman numerals) should be used and, conversely, if there are not at least two sub-topics, then no subheads should be introduced. Styles named ÒHeading 1Ó, ÒHeading 2Ó, ÒHeading 3Ó, and ÒHeading 4Ó are prescribed.
+
+
 
 \subsection{Figures and Tables}
 
