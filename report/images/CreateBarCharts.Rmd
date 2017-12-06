@@ -102,10 +102,12 @@ full %>%
       geom_label_repel(aes(label = Feature), alpha = 0.8, nudge_y = 1500 ) + 
       xlab(NULL) + 
       theme(axis.title.x=element_blank(),
+           legend.position=c(.73,.83),
         axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(), 
-        legend.position=c(.83,.75),
-        legend.text=element_text(size=12))
+        legend.text=element_text(size=16),
+        axis.ticks.x=element_blank()) + 
+            scale_fill_manual(values=c("#92939b", "#95b4ed", "#fc8946", "#9a69e5")) 
+      
 ```
 
 
@@ -119,8 +121,9 @@ no.tfidf %>%
       theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank(), 
-        legend.position=c(.83,.75),
-        legend.text=element_text(size=12))
+        legend.position=c(.73,.83),
+        legend.text=element_text(size=16)) + 
+            scale_fill_manual(values=c("#92939b", "#95b4ed", "#fc8946"))
 ```
 
 

@@ -313,10 +313,10 @@ Using 3-fold cross validation, we added different subsets of these text-to-text 
 We found that including two semantic similarity scores, calculated using the simplified scheme (9) and $Sim(w_1, w_2)$ as  Leacock-Chodorow distnace and embedding Cosine, resulted in the largest increase in performance in our baseline model. These two similarity scores define the inal feature set we propose. 
 
 \begin{gather*} \tag{10}
-Feature_{10} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \equiv \text{Leacock-Chodorow Similarity}\}
+Feature_{8} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \equiv \text{Leacock-Chodorow Similarity}\}
 \end{gather*}
 \begin{gather*} \tag{11}
-Feature_{11} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \equiv \text{Cosine Distance (GloVe Embeddings)}\}
+Feature_{9} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \equiv \text{Cosine Distance (GloVe Embeddings)}\}
 \end{gather*}
 
 
