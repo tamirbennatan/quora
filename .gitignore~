@@ -101,7 +101,6 @@ ENV/
 *.xlsx
 *.vec
 data/
-feature_engineering/
 models/
 *.RData
 *.Rhistory
