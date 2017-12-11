@@ -104,3 +104,4 @@ data/
 models/
 *.RData
 *.Rhistory
+report_copy/
