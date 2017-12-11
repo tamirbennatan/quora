@@ -319,7 +319,7 @@ Feature_{9} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \e
 
 \section{RESULTS}
 
-To measure the importance of each of these feature sets, we trained logistic regression and XGB models on all the features described above, using 3-fold cross validation to tune hyperparameters. We then removed different groups subsets of the Tf-Idf, question classification and semantic scoring feature sets, and re-tuned the models’ hyperparameters. We then used these models to predict the test-set labels. The prediction accuracy for the resulting models are summarized in table 4, as well as those of our baseline classifiers described in section 4.A. We limit our anaysis to the XGB model results, as these models performed much better than the logistic regression classifiers. 
+To measure the importance of each of these feature sets, we trained logistic regression and XGB models on all the features described above. We then removed different subsets of the Tf-Idf, question classification and semantic scoring feature sets, and re-tuned the models’ hyperparameters using 3-fold cross validation. We then used these models to predict the test-set labels. The prediction accuracy for the resulting models are summarized in Table 4, as well as those of our baseline classifiers described in section 4.A. We limit our anaysis to the XGB model results, as these models performed much better than the logistic regression classifiers. 
 
 % Please add the following required packages to your document preamble:
 % \usepackage[table,xcdraw]{xcolor}
@@ -337,7 +337,7 @@ Feature sets ommited                                                            
 XGB Test Set Accuracy                                                           & \textbf{.7925} & .7624 (.0301)        & .7861 (.0064)        & .7825 (.01)          & .7585 (.034)  & .7504 (.0421)                 & .7794 (.0131)                & .7456 (.0469) \\ \hline
 \begin{tabular}[c]{@{}l@{}}Logistic Regression\\ Test Set Accuracy\end{tabular} & \textbf{.6962} & .6838 (.0124)        & .6951 (.0011)        & .6837 (.0125)        & .6836 (.0126) & .6743 (.0219)                 & .6827 (.0125)                & .6728 (.0234) \\ \hline
 \multicolumn{9}{|c|}{\cellcolor[HTML]{ECF4FF}BASELINE MODELS}                                                                                                                                                                                                        \\ \hline
-\multicolumn{1}{|c|}{\cellcolor[HTML]{EFEFEF}Manhattan LSTM}                    & .7588          & \multicolumn{3}{c|}{\cellcolor[HTML]{EFEFEF}Human (320 Responses)} & .8094         & \multicolumn{2}{c|}{\cellcolor[HTML]{EFEFEF}Random Guessing} & .5015         \\ \hline
+\multicolumn{1}{|c|}{\cellcolor[HTML]{EFEFEF}Manhattan LSTM}                    & .7588          & \multicolumn{3}{c|}{\cellcolor[HTML]{EFEFEF}Human (400 Responses)} & .8175         & \multicolumn{2}{c|}{\cellcolor[HTML]{EFEFEF}Random Guessing} & .5015         \\ \hline
 \end{tabular}
 \begin{tablenotes}
 \item Here, \{1\} are the Tf-Idf features from 4.B, \{2\} are the question classification features from 4.C, and \{3\} are the sematantic similarity scores from 4.D.
@@ -351,29 +351,25 @@ XGB Test Set Accuracy                                                           
 \begin{minipage}{.5\textwidth}
   \centering
   \includegraphics[width=1\linewidth]{full_bars}
-  \captionof{figure}{A figure}
+  \captionof{figure}{Variable importance chart of model trained on all features.}
   \label{fig:test1}
 \end{minipage}%
 \begin{minipage}{.5\textwidth}
   \centering
   \includegraphics[width=1\linewidth]{no_tfidf_bars}
-  \captionof{figure}{Another figure}
+  \captionof{figure}{Variable importance chart of model that excludes the Tf-Idf features.}
   \label{fig:test2}
 \end{minipage}
 \end{figure*}
 
-\subsection{Headings, etc}
+Including all three feature sets results in the best performance, with a test set accuracy of 79.25\% - 4.69\% better than the baseline XGB model. Amongst the three feature sets we propose, removing the Tf-Idf features from 4.B results in the largest decrease in prediction accuracy relative to the full model - with a 3.01\% decrease. Removing the question classification features from 4.C results in the smallest decrease in prediction accuracy, indicating that these features are the least meaningful of those we propose. 
 
-Text heads organize the topics on a relational, hierarchical basis. For example, the paper title is the primary text head because all subsequent material relates and elaborates on this one topic. If there are two or more sub-topics, the next level head (uppercase Roman numerals) should be used and, conversely, if there are not at least two sub-topics, then no subheads should be introduced. Styles named ÒHeading 1Ó, ÒHeading 2Ó, ÒHeading 3Ó, and ÒHeading 4Ó are prescribed.
+When using ensembled tree models such as XGB, one can count the number of times a variable is split upon as a heuristic measure of that variable's imoprtanace. This measure is called the \emph{F-Score}. By plotting the F-Scores of each feature, we can gain insight into the importance of each variable used in a model, relative to the other variables present (Gareth et al; 2017).
 
+A variable importance chart of the full model corroborates the result that the Tf-Idf features are the most meaningful, as these features are amongst those with the highest F-Scores [figure 1]. The semantic similarity scores also have high F-Scores. Interestingly, when the Tf-Idf features are removed, the sematnic similarity scores become much more important relative to the remaining features, evident in Figure 2. This suggests that the Tf-Idf features and semantic similarity scores explain some of the same variance, and once the Tf-Idf features are removed the model must rely more heavily on the semantic similarity scores. Indeed, the features in these to feature sets are strongly correlated; the correlation between Feature 9 and Features 6 and 7 are 68.28\% and -73.91\%, respectively. 
 
+The variable importance charts also suggest that the question classification features are not meaningful. In fact, these three features are amongst four features with the lowest F-Score in the complete model. 
 
-\subsection{Figures and Tables}
-
-Positioning Figures and Tables: Place figures and tables at the top and bottom of columns. Avoid placing them in the middle of columns. Large figures and tables may span across both columns. Figure captions should be below the figures; table heads should appear above the tables. Insert figures and tables after they are cited in the text. Use the abbreviation ÒFig. 1Ó, even at the beginning of a sentence.
-
-
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words rather than symbols or abbreviations when writing Figure axis labels to avoid confusing the reader. As an example, write the quantity ÒMagnetizationÓ, or ÒMagnetization, MÓ, not just ÒMÓ. If including units in the label, present them within parentheses. Do not label axes only with units. In the example, write ÒMagnetization (A/m)Ó or ÒMagnetization {A[m(1)]}Ó, not just ÒA/mÓ. Do not label axes with a ratio of quantities and units. For example, write ÒTemperature (K)Ó, not ÒTemperature/K.Ó
 
 \section{CONCLUSIONS}
 
@@ -442,7 +438,9 @@ Communications of the ACM Vol. 38, No. 11: 39-41.
 \bibitem{c13} Bird, Steven, Edward Loper and Ewan Klein (2009). Natural Language Processing with Python.  O'Reilly Media Inc.
 \bibitem{c14} Wu, Z., and Palmer, M. 1994. Verb semantics and lexical selection. In Proceedings of the Annual Meeting of the Association for Computational Linguistics.
 \bibitem{c15} Leacock, C., and Chodorow, M. 1998. Combining local context and WordNet sense similarity for word sense identification. In WordNet, An Electronic Lexical Database. The MIT Press.
+\bibitem{c16} James, Gareth, et al. “Bagging, Random Forests, Boosting.” An Introduction to Statistical Learning: with Applications in R, Springer, 2017.
 \end{thebibliography}
+
 
 
 

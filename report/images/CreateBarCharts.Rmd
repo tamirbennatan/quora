@@ -128,7 +128,9 @@ no.tfidf %>%
 
 
 
-
+```{R}
+data <-  read.csv('../../data/features.csv')
+```
 
 
 
