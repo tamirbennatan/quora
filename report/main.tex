@@ -66,7 +66,7 @@ Intuitive Features for Identifying Questions of Semantic Coincidence
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.This is a bunch of filler. It is here so that I don't screw myself over while formatting.
+In this paper, we address the problem of identifying if pairs of question have the same semantic intent. Previous work on this problem focuses on complex deep learning models, rather than careful feature engineering. In this paper, we propose three sets of features which are designed to capture our intuition of what charactarizes semantic similarity between two questions. The first feature set uses Tf-Idf weights to model and compare the principal words in each question. The second set of features are predicted semantic categorizations of the each question. Our final feature set is a series of  knowlege-based similarity scores, calculated using the WordNet heirarchy. Through careful experimentation we quantify the relative importance of each of these feature sets for detecting questions of duplicate intent. We also a simple heuristic to rank the features we used in terms of predictiveness. 
 
 \end{abstract}
 
@@ -162,15 +162,17 @@ Sentence embedding similarity	   & Vector similarities of sentence embeddings us
 
 
 
-\footnotetext[1]{Edit distance variations were computed using the python \emph{fuzzywuzzy} package. More information on these metrics can be found \href{http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/}{\color{blue} here.}}
-
-\footnotetext[2]{Vector similarities were calculated using the python \emph{SciPy} package. More information on these metrics can be found \href{https://docs.scipy.org/doc/scipy/reference/spatial.distance.html}{\color{blue} here.}}
 
 
 We then split the dataset into training and test splits, which we kept consistent in all further experiments. 
 We trained logistic regression and extreme gradient boosting (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline models. 
 
 To test whether logistic regression and XGB models are adequate models for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared several LSTM architectures, and found that the Manhattan siamese LSTM (MaLSTM) architecture (Mueller et al; 2016) performed best. 
+
+
+\footnotetext[1]{Edit distance variations were computed using the python \emph{fuzzywuzzy} package. More information on these metrics can be found \href{http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/}{\color{blue} here.}}
+
+\footnotetext[2]{Vector similarities were calculated using the python \emph{SciPy} package. More information on these metrics can be found \href{https://docs.scipy.org/doc/scipy/reference/spatial.distance.html}{\color{blue} here.}}
 
 The MaLSTM is a Siamese neural network which emits a prediction by taking the Manhattan similarity of of the vector representations of two inputs where the Manhattan similarity of two vectors $v_1$ and $v_2$ is defined:
 $$
