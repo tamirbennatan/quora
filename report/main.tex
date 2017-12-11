@@ -48,8 +48,9 @@ Intuitive Features for Identifying Questions of Semantic Coincidence
 \author{ \parbox{3 in}{\centering Tamir Bennatan
          {\tt\small tamir.bennatan@mail.mcgill.ca}}
          \hspace*{ 0.5 in}
-         \parbox{3 in}{ \centering Pradeep Misra**
-         {\tt\small pmisra@cs.wright.edu}}
+         \parbox{3 in}{ \centering Jack Wei Xi Luo
+         \break
+         {\tt\small jack.luo@mail.mcgill.ca}}
 }
 
 
@@ -73,32 +74,28 @@ This is a bunch of filler. It is here so that I don't screw myself over while fo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{INTRODUCTION}
 
-In January of 2017, Quora - a popular question and answer website - released a dataset consisting of pairs of questions from their site, and labels indicating if the questions have the same intent. Shortly thereafter, they used this dataset to start a Kaggle\footnotemark competition, offering \$25,000 to the competitors who build the best models for predicting if two questions are duplicates - meaning that they ask the same thing.
+In January 2017, Quora - a popular question and answer website - released a dataset containing pairs of questions, with labels indicating if the questions have the same intent. A Kaggle competition was shortly launched thereafter to crowdsource the best models for predicting whether or not two questions are duplicates. Duplicate question detection is important for Quora, as duplicates make it harder to find the best answer for a particular question, and also limit the outreach of individual contributed answers.
 
-\footnotetext{Kaggle.com is a website which hosts data science and machine learning competitions.} 
+Identifying duplicate questions is a special case of the identifying semantic coincidence between short texts. This problem arises in many NLP tasks, including information retrieval (Jurafsky \& Martin; 2009), automatic summarization (Lin \& Hovy; 2003) and text classification (Li \& Roth; 2002). 
 
-The ability to identify duplicate questions is important for question-answer sites like Quora; duplicate questions make it harder to find the best answer for a particular question, and limit the outreach of each individual answer contributed to the site.
-
-Identifying duplicate questions is a special case of the more general problem of identifying semantic coincidence between short texts. This problem arises in many Natural Language Processing (NLP) tasks, including information retrieval (Jurafsky \& Martin; 2009), automatic summarization (Lin \& Hovy; 2003) and text classification (Li \& Roth; 2002). 
-
-In this paper, we describe three feature sets designed to capture  the semantic relationship between questions. We then evaluate the relative importance of these features for detecting duplicate questions. Each of these feature sets are inspired by different intuitions about what characterizes semantic similarity, and are engineered using techniques used in ranging NLP tasks.
+In this paper, we describe three feature sets designed to capture the semantic relationship between questions. We then evaluate the relative importance of these features for detecting duplicate questions. Each of these feature sets are inspired by different intuitions about what characterizes semantic similarity.
 
 The first feature set is based on Term Frequency-Inverse Document Frequency (Tf-Idf) scores. Tf-Idf scores have been shown to be an effective way to model the relative importance of words within a document (Rajaraman \& Ullman; 2011). As such, we propose a set of features which measure the similarity of two questions based on the similarity of the important words in each question.
 
 The second feature set distinguishes between questions based a semantic categorization of its expected answer. Using a dataset of 6000 factoid questions, annotated with a categorization of their answers (Lin \& Roth; 2002), we fit a series of deep neural network models that predict the answer type of a question. We then used these models to predict the answer types of the questions in the Quora dataset, and used these predictions as features in our models.
 
-The final feature set are a series of knowledge-based semantic similarity scores between paird questions. The similarity of two questions is calculated by composing the semantic similarities of the words in each question (Mihalcea et al; 2006), which can be computed in relation to a semantic network, such as WordNet (Miller; 1995). We also extend this framework by incorporating neural word embeddings to measure word-to-word similarity.
+The final feature set are a series of knowledge-based semantic similarity scores between paired questions. The similarity of two questions is calculated by composing the semantic similarities of the words in each question (Mihalcea et al; 2006), which can be computed in relation to a semantic network, such as WordNet (Miller; 1995). We also extend this framework by incorporating neural word embeddings to measure word-to-word similarity.
 
 We first trained a classifier on a baseline set of syntactic and neural features. We then augmented this baseline with different subsets of the features mentioned above, and re-trained our classifiers with these new features. In this paper, we discuss the usefulness of our proposed feature sets in the duplicate question detection task.
 
 
 \section{RELATED WORK}
 
-To achieve high accuracy, many competitors in the Kaggle competition incorporated hundreds of features and stacked many classifiers when making predictions. Most successful competitors incorporated Long Short Term Memory Recurrent Neural Networks (LSTM) in their submissions. Two LSTM variants proved especially useful: Siamese LSTMs and LSTMs with neural attention.
+To achieve high accuracy, many Kaggle competitors incorporated hundreds of features and stacked classifiers when making predictions. Most successful competitors incorporated long short-term memory (LSTM) networks in their submissions. Two LSTM variants proved especially useful: Siamese LSTMs and LSTMs with neural attention.
 
-Siamese LSTMs are composed of two or more LSTM layers which have tied weights. When trained on paired examples, Siamese LSTMs are though to construct sophisticated representations of semantic relationships between input texts, which makes them  effective in semantic similarity and entailment tasks (Mueller et al; 2016). This property is applicable to detecting question deduplication, since at its core the duplicate question detection task is one one of detecting semantic coincidence between pairs of input sentences.
+Siamese LSTMs are composed of two or more LSTM layers which have tied weights. When trained on paired examples, Siamese LSTMs are though to construct sophisticated representations of semantic relationships between input texts, which makes them effective in semantic similarity and entailment tasks (Mueller et al; 2016). This property is applicable to detecting question deduplication, since at its core the duplicate question detection task is one one of detecting semantic coincidence between pairs of input sentences.
 
-Neural attention, when coupled with LSTMs, is a mechanism which allows a LSTM to pay selective attention to the outputs of intermediate LSTM units. This technique often improves the performance of LSTMs in  Natural Language Inference tasks (Rocktäschel et al.; 2016), and has proven effective for the Kaggle competition hosted by the Quora.
+Neural attention, when coupled with LSTMs, is a mechanism which allows a LSTM to pay selective attention to the outputs of intermediate LSTM units. This technique often improves the performance of LSTMs in Natural Language Inference tasks (Rocktäschel et al.; 2016), and has proven effective on the Quora dataset.
 
 Our work differs from that of the top Kaggle competitors in that our main objective was not to maximize the performance of our models, but rather to craft novel linguistic features and evaluate their predictiveness. Thus, we did not focus on building sophisticated deep learning models, for it is typically difficult to determine the relative importance of different text features to a deep learning neural network. Instead, we focused on using tree-based models to measure the marginal increase in performance of our models when trained on each of our proposed feature sets.
 
@@ -122,7 +119,7 @@ How can I access Torbox in India?                         & How can I access Goo
 
 Paired questions tend to be similar in that they are similarly worded, or in that they share words of low document frequency.
 
-To guage the ambiguity of the task and the noisiness of the labels, we asked 8 native English speakers (not the authors) to each classify 40 randomly sampled question pairs as duplicates or not. Of the 320 human responses collected, 80.94\% coincided with the provided labels.
+To gauge the ambiguity of the task and the noisiness of the labels, we asked 10 native English speakers (not the authors) to each classify 40 randomly sampled question pairs as duplicates or not. Of the 400 human responses collected, 81.75\% coincided with the provided labels.
 
 
 \section{METHOD}
@@ -130,7 +127,7 @@ To guage the ambiguity of the task and the noisiness of the labels, we asked 8 n
 
 \subsection{Baseline Features and Models} 
 
-To determine if a new feature is useful, we built a baseline feature set and model, so that we could measure the increase in performance that results from incorporating each new feature set.
+We built a baseline feature set and model such that we could measure the increase in performance that results from incorporating each new feature set.
 
 Our baseline feature set consists of standard syntactic and string distance features. We also noticed that many Kaggle competitors used neural word embeddings to construct “sentence vectors” for each question by averaging the embedding vectors of each word in a question. They then used various similarity functions to use the similarity between the sentence vectors of paired questions as features. We recreated these features using the fastText pre-trained word embeddings (Joulin et al.; 2016). Our initial features are summarized in Table 2.
 
@@ -171,17 +168,17 @@ Sentence embedding similarity \footnotemark	   & Vector similarities of sentence
 
 
 We then split the dataset into training and test splits, which we kept consistent in all further experiments. 
-We trained Logistic Regression and Extremely Boosted Decision Trees (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline models. 
+We trained logistic regression and extreme gradient boosting (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline models. 
 
-To test whether logistic regression and XGB models are adequate choices for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared serveral LSTM archetectures, and found that the Manhattan Siamese LSTM (MaLSTM) archetecutre (Mueller et al; 2016) performed best. 
+To test whether logistic regression and XGB models are adequate choices for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared several LSTM architectures, and found that the Manhattan siamese LSTM (MaLSTM) architecture (Mueller et al; 2016) performed best. 
 
-The MaLSTM is a Siamese neural network which emits a prediction by taking the Manhattan similarity of of the vector representations of two inputs  where the Manhattan similarity of two vectors $v_1$ and $v_2$ is defined:
+The MaLSTM is a Siamese neural network which emits a prediction by taking the Manhattan similarity of of the vector representations of two inputs where the Manhattan similarity of two vectors $v_1$ and $v_2$ is defined:
 $$
     ManhattanSim(v_1, v_2) = \exp(-||{v_1 - v_2||_1})  \eqno{(1)}
 $$
 We used fastText word embeddings of the words in each question as inputs to the MaLSTM. More details on our chosen architecture can be found in Appendix 1. 
 
-We found that the XGB model, when trained on the baseline featurees, had performance similar to that of the MaLSTM. Thus, we concluded that the XGB model has the capacity to adequately perform in the question duplicate detection task. 
+We found that the XGB model, when trained on the baseline features, had performance similar to that of the MaLSTM. Thus, we concluded that the XGB model has the capacity to adequately perform in the question duplicate detection task. 
 
 \subsection{Tf-Idf Features}
 
