@@ -373,9 +373,17 @@ A variable importance chart of the full model corroborates the result that the T
 The variable importance charts also suggest that the question classification features are not meaningful. In fact, these three features are amongst four features with the lowest F-Score in the complete model. 
 
 
-\section{CONCLUSIONS}
+\section{DISCUSSION AND CONCLUSIONS}
 
-A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
+Using the three sets of features we describe in this paper, we were able to improve the prediciton accuracy of our baseline model from 74.56\% to 79.25\%. Of the three feature sets, those computed using Tf-Idf scores were the most impactful. This confirms our hypothesis that measures of word specificity are useful in comparing the semantic similarity between two questions. 
+
+We also applied and extended a framework for modeling semantic similarities between short texts using knowledge-based word similarity scores, proposed by Mihalcea et al (2006). We found that these scores were meaningful for our classification task. These features were highly correlated with those calculated using Tf-Idf scores, however, and so it may be that these scores are capturing the specificity of the words in each question, rather than the semantic similarity of these words. 
+
+Finally, we found that our answer type predictions were not useful for our purposes. We suspect that this is because we used overly complex models to predict the answer type of a question. The TREC dataset has only 6,000 observations, but the number of parameters in our LSTM classifiers ranged from 70,506 to 28,141,268. Though we can't know for sure, it's probable that these classifiers were overfit to the TREC dataset, and did not generalize to the Quora dataset. 
+
+In future work, we would try using simpler models for predicting a question's answer type - such as Naïve Bayes or a Support Vector Machine. We could also try to incoroprate predictions for the fine answer categories in the annotated TREC dataset, as apposed to the coarse categories we used. 
+
+We also think that an interesting extension to this work would be to extract features that concern the grammatical functions of the words in each question. For example, one could construct a dependency parse tree for each question, and compare the subjects direct objects, head-words of each question.
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
@@ -393,6 +401,13 @@ A conclusion section is not required. Although a conclusion may review the main 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section*{STATEMENT OF CONTRIBUTION}
+
+Tamir engineered the features described, contributed to the classifiers built, and conducted model experiments. Jack contributed to the classifiers and paper, and experimented with advanced features, such as Named Entity Recognition and headword extraction. 
+
+
 \section*{APPENDIX}
 
    \begin{figure}[thpb]
@@ -405,18 +420,6 @@ A conclusion section is not required. Although a conclusion may review the main 
       \caption{Manhattan Siamese LSTM archetecture, annotated with output dimension at each layer. Weights of each LSTM layer are tied (Siamese).}
       \label{figurelabel}
    \end{figure}
-
-
-
-\section*{STATEMENT OF CONTRIBUTION}
-
-The preferred spelling of the word ÒacknowledgmentÓ in America is without an ÒeÓ after the ÒgÓ. Avoid the stilted expression, ÒOne of us (R. B. G.) thanks . . .Ó  Instead, try ÒR. B. G. thanksÓ. Put sponsor acknowledgments in the unnumbered footnote on the first page.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-References are important to the reader; therefore, each citation must be complete and correct. If at all possible, references should be commonly available publications.
 
 
 
@@ -442,8 +445,6 @@ Communications of the ACM Vol. 38, No. 11: 39-41.
 \bibitem{c15} Leacock, C., and Chodorow, M. 1998. Combining local context and WordNet sense similarity for word sense identification. In WordNet, An Electronic Lexical Database. The MIT Press.
 \bibitem{c16} James, Gareth, et al. “Bagging, Random Forests, Boosting.” An Introduction to Statistical Learning: with Applications in R, Springer, 2017.
 \end{thebibliography}
-
-
 
 
 
