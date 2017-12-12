@@ -66,7 +66,7 @@ Intuitive Features for Identifying Questions of Semantic Coincidence
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-In this paper, we address the problem of identifying if pairs of question have the same semantic intent. Previous work on this problem focuses on complex deep learning models, rather than careful feature engineering. In this paper, we propose three sets of features which are designed to capture our intuition of what charactarizes semantic similarity between two questions. The first feature set uses Tf-Idf weights to model and compare the principal words in each question. The second set of features are predicted semantic categorizations of the each question. Our final feature set is a series of  knowlege-based similarity scores, calculated using the WordNet heirarchy. Through careful experimentation we quantify the relative importance of each of these feature sets for detecting questions of duplicate intent. We also a simple heuristic to rank the features we used in terms of predictiveness. 
+In this paper, we address the problem of identifying if pairs of question have the same semantic intent. Previous work on this problem focuses on complex deep learning models, rather than careful feature engineering. In this paper, we propose three sets of features which are designed to capture our intuition of what characterizes semantic similarity between two questions. The first feature set uses Tf-Idf weights to model and compare the principal words in each question. The second set of features are predicted semantic categorizations of each question. Our final feature set is a series of  knowledge-based similarity scores, calculated using the WordNet hierarchy. Through careful experimentation we quantify the relative importance of each of these feature sets for detecting questions of duplicate intent. We also a simple heuristic to rank the features we used in terms of predictiveness. 
 
 \end{abstract}
 
@@ -74,7 +74,7 @@ In this paper, we address the problem of identifying if pairs of question have t
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{INTRODUCTION}
 
-In January 2017, Quora - a popular question and answer website - released a dataset containing pairs of questions, with labels indicating if the questions have the same intent. A Kaggle competition was shortly launched thereafter to crowdsource the best models for predicting whether or not two questions are duplicates. Duplicate question detection is important for Quora, as duplicates make it harder to find the best answer for a particular question, and also limit the outreach of individual contributed answers.
+In January 2017, Quora - a popular question and answer website - released a dataset containing pairs of questions, with labels indicating if the questions have the same intent. A Kaggle competition was launched shortly thereafter to crowdsource the best models for predicting whether or not two questions are duplicates. Duplicate question detection is important for Quora, as duplicates make it harder to find the best answer for a particular question, and also limit the outreach of individual contributed answers.
 
 Identifying duplicate questions is a special case of identifying semantic coincidence between short texts. This problem arises in many NLP tasks, including information retrieval (Jurafsky \& Martin; 2009), automatic summarization (Lin \& Hovy; 2003) and text classification (Li \& Roth; 2002). 
 
@@ -102,7 +102,7 @@ Our work differs from that of the top Kaggle competitors in that our main object
 
 \section{QUORA DATA SET}
 
-The dataset released by Quora consists of 404290 pairs of questions posted to the site. 36.9\% of pairs are labeled as duplicates. There are no missing values [Table 1].  
+The dataset released by Quora consists of 404,290 pairs of questions posted to the site. 36.9\% of pairs are labeled as duplicates. There are no missing values [Table 1].  
 
 \begin{table}[]
 \centering
@@ -129,7 +129,7 @@ To gauge the ambiguity of the task and the noisiness of the labels, we asked 10 
 
 We built a baseline feature set and model so that we could measure the relative increase in performance that results from incorporating each new feature set.
 
-Our baseline feature set consists of standard syntactic and string distance features\footnotemark . We also noticed that many Kaggle competitors used neural word embeddings to construct “sentence vectors” for each question by averaging the embedding vectors of each word in a question. They then used various similarity functions\footnotemark \ to compute the similarity between the sentence vectors of paired questions as features. We recreated these features using the fastText pre-trained word embeddings (Joulin et al.; 2016). Our initial features are summarized in Table 2.
+Our baseline feature set consists of standard syntactic and string edit distance features\footnotemark . We also noticed that many Kaggle competitors used neural word embeddings to construct “sentence vectors” for each question by averaging the embedding vectors of each word in a question. They then used various similarity functions\footnotemark \ to compute the similarity between the sentence vectors of paired questions as features. We recreated these features using the fastText pre-trained word embeddings (Joulin et al.; 2016). Our initial features are summarized in Table 2.
 
 \begin{table}[b]
 \centering
@@ -137,7 +137,7 @@ Our baseline feature set consists of standard syntactic and string distance feat
 \label{my-label}
 \begin{tabular}{|p{15mm}|p{60mm}|}
 \hline
-Feature category                          & Feature \\ \hlineB{3}
+Feature \\ category                          & Feature \\ \hlineB{3}
 
 Syntactic                        & Number of words in each question \\\cline{2-2}
 features							   & Number of words the two questions have in common \\\hline
@@ -165,9 +165,9 @@ Sentence embedding similarity	   & Vector similarities of sentence embeddings us
 
 
 We then split the dataset into training and test splits, which we kept consistent in all further experiments. 
-We trained logistic regression and extreme gradient boosting (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline models. 
+We trained logistic regression and gradient boosted trees (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline features. 
 
-To test whether logistic regression and XGB models are adequate models for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared several LSTM architectures, and found that the Manhattan siamese LSTM (MaLSTM) architecture (Mueller et al; 2016) performed best. 
+To test whether logistic regression and XGB models are adequate models for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared several LSTM architectures, and found that the Manhattan Siamese LSTM (MaLSTM) architecture (Mueller et al; 2016) performed best. 
 
 
 \footnotetext[1]{Edit distance variations were computed using the python \emph{fuzzywuzzy} package. More information on these metrics can be found \href{http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/}{\color{blue} here.}}
@@ -403,9 +403,9 @@ We also think that an interesting extension to this work would be to extract fea
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section*{STATEMENT OF CONTRIBUTION}
+\section{STATEMENT OF CONTRIBUTION}
 
-Tamir engineered the features described, contributed to the classifiers built, and conducted model experiments. Jack contributed to the classifiers and paper, and experimented with advanced features, such as Named Entity Recognition and headword extraction. 
+Tamir engineered the features described, worked on the classifiers built, and conducted model experiments. Jack contributed to the classifiers and paper, and experimented with advanced techniques for feature extraction, such as named entity recognition and headword extraction. 
 
 
 \section*{APPENDIX}
