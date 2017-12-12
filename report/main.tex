@@ -379,11 +379,11 @@ Using the three sets of features we describe in this paper, we were able to impr
 
 We also applied and extended a framework for modeling semantic similarities between short texts using knowledge-based word similarity scores, proposed by Mihalcea et al (2006). We found that these scores were useful in our classification task. These features were highly correlated with those calculated using Tf-Idf scores, however, and so it may be that these scores are capturing the specificity of the words in each question, rather than the semantic similarity of these words. 
 
-Finally, we found that our answer type predictions were not useful for for detecting duplicate questions. We suspect that this is because we used overly complex models to predict the answer type of a question. The TREC dataset has only 6,000 observations, but the number of parameters in our LSTM classifiers ranged from 70,506 to 28,141,268. Though we can't know for sure, it's probable that these classifiers were overfit to the TREC dataset, and did not generalize to the Quora dataset. 
+Finally, we found that our answer type predictions were not useful for detecting duplicate questions. We suspect that this is because we used overly complex models to predict the answer type of a question. The TREC dataset has only 6,000 observations, but the number of parameters in our LSTM classifiers ranged from 70,506 to 28,141,268. Though we can't know for sure, it's probable that these classifiers were overfit to the TREC dataset, and did not generalize to the Quora dataset. 
 
-In future work, we would try using simpler models for predicting a question's answer type - such as Naïve Bayes or a Support Vector Machine. We could also try to incoroprate predictions for the fine answer categories in the annotated TREC dataset, as apposed to the coarse categories we used. 
+In future work, we would like to try using simpler models for predicting a question's answer type - such as Naïve Bayes or a Support Vector Machine. We could also try to incoroprate predictions of the fine answer categories in the annotated TREC dataset, as apposed to the coarse categories we used. 
 
-We also think that an interesting extension to this work would be to extract features that concern the grammatical functions of the words in each question. For example, one could construct a dependency parse tree for each question, and compare the subjects direct objects, head-words of each question.
+We also think that an interesting extension to this work would be to extract features that concern the grammatical functions of the words in each question. For example, one could construct a dependency parse tree for each question, and compare the subjects, direct objects, and head-words of each question.
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
@@ -405,7 +405,7 @@ We also think that an interesting extension to this work would be to extract fea
 
 \section{STATEMENT OF CONTRIBUTION}
 
-Tamir engineered the features described, worked on the classifiers built, and conducted model experiments. Jack contributed to the classifiers and paper, and experimented with advanced techniques for feature extraction, such as named entity recognition and headword extraction. 
+Tamir engineered the features described, worked on the classifiers and paper, and conducted model experiments. Jack contributed to the classifiers and paper, and experimented with advanced techniques for feature extraction, such as named entity recognition and headword extraction. 
 
 
 \section*{APPENDIX}
