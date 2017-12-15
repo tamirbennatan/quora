@@ -66,7 +66,7 @@ Intuitive Features for Identifying Questions of Semantic Coincidence
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-In this paper, we address the problem of identifying if pairs of question have the same semantic intent. Previous work on this problem focuses on complex deep learning models, rather than careful feature engineering. In this paper, we propose three sets of features which are designed to capture our intuition of what characterizes semantic similarity between two questions. The first feature set uses Tf-Idf weights to model and compare the principal words in each question. The second set of features are predicted semantic categorizations of each question. Our final feature set is a series of  knowledge-based similarity scores, calculated using the WordNet hierarchy. Through careful experimentation we quantify the relative importance of each of these feature sets for detecting questions of duplicate intent. We also a simple heuristic to rank the features we used in terms of predictiveness. 
+We address the problem of identifying if pairs of questions have the same semantic intent. Previous work on this problem focuses on complex deep learning models, rather than careful feature engineering. We propose three sets of features designed to capture our intuition of what characterizes semantic similarity between two questions. The first feature set uses Tf-Idf weights to model and compare the principal words in each question. The second set of features are predicted semantic categorizations of each question. The feature set is a series of knowledge-based similarity scores, calculated using WordNet hierarchy. Through careful experimentation, we quantify the relative importance of each of these feature sets for detecting questions of duplicate intent. We also use simple heuristic to rank the features we used in terms of predictiveness. 
 
 \end{abstract}
 
@@ -93,7 +93,7 @@ We first trained a classifier on a baseline set of syntactic and neural features
 
 To achieve high accuracy, many Kaggle competitors incorporated hundreds of features and stacked classifiers when making predictions. Most successful competitors incorporated long short-term memory (LSTM) networks in their submissions. Two LSTM variants proved especially useful: Siamese LSTMs and LSTMs with neural attention.
 
-Siamese LSTMs are composed of two or more LSTM layers which have tied weights. When trained on paired examples, Siamese LSTMs are thought to construct sophisticated representations of semantic relationships between input texts, which makes them effective in semantic similarity and entailment tasks (Mueller et al; 2016). This property is applicable to detecting question deduplication, since at its core this task is one of detecting semantic coincidence between pairs of input sentences.
+Siamese LSTMs are composed of two or more LSTM layers which have tied weights. When trained on paired examples, siamese LSTMs are thought to construct sophisticated representations of semantic relationships between input texts, which makes them effective in semantic similarity and entailment tasks (Mueller et al; 2016). This property is applicable to detecting question deduplication, since at its core this task is one of detecting semantic coincidence between pairs of input sentences.
 
 Neural attention, when coupled with LSTMs, is a mechanism which allows a LSTM to pay selective attention to the outputs of intermediate LSTM units. This technique often improves the performance of LSTMs in Natural Language Inference tasks (Rocktäschel et al.; 2016), and has proven effective on the Quora dataset.
 
@@ -167,7 +167,7 @@ Sentence embedding similarity	   & Vector similarities of sentence embeddings us
 We then split the dataset into training and test splits, which we kept consistent in all further experiments. 
 We trained logistic regression and gradient boosted trees (XGB) models on the training set using the features described in Table 2, and used 3-fold cross validation to tune hyperparameters. These are our baseline features. 
 
-To test whether logistic regression and XGB are adequate models for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared several LSTM architectures, and found that the Manhattan Siamese LSTM (MaLSTM) architecture (Mueller et al; 2016) performed best. 
+To test whether logistic regression and XGB are adequate models for this task, we also implemented an LSTM classifier, since many Kaggle competitors demonstrated that these models perform well on the Quora dataset. With the use of a development set, we compared several LSTM architectures, and found that the Manhattan siamese LSTM (MaLSTM) architecture (Mueller et al; 2016) performed best. 
 
 
 \footnotetext[1]{Edit distance variations were computed using the Python \emph{fuzzywuzzy} package. More information on these metrics can be found \href{http://chairnerd.seatgeek.com/fuzzywuzzy-fuzzy-string-matching-in-python/}{\color{blue} here.}}
@@ -185,7 +185,7 @@ We found that the XGB model, when trained on the baseline features, had performa
 \subsection{Tf-Idf Features}
 
 
-Suppose that we were only allowed to compare one word from each question in a pair to determine if the questions are duplicates, but we had a choice of which words to compare. Which words should we choose? We would reasonably want to choose the most \emph{important} word from each question, or the words which are most particular to each question. 
+Suppose we were allowed to compare one word from each question in a pair to determine if the questions are duplicates, but had a choice of which words to compare. Which words should we choose? We would reasonably want to choose the most \emph{important} word from each question, or the words which are most particular to each question. 
 
 For example, in the fabricated question pair:
 \begin{enumerate}
@@ -205,7 +205,7 @@ Idf(w) = \log{\frac{1 + n_d}{1 + df(w)}} + 1  \eqno{(3)}
 $$
 Where $n_d$ is the number of documents\footnote{\emph{Documents} and \emph{texts} are questions, in this context.} in the corpus, and $df(w)$ is the number of documents in the corpus that contain the word $w$. 
 
-The Tf-Idf weight of a word in a document will be high if: 1) the word appears many times in  that document, and 2) the word has low document frequency. It serves as a natural heuristic for modeling the relative importance of a word within a document. Tf-Idf weights are useful for many NLP tasks; in fact, variations of this scoring scheme are used as term weights in nearly all vector space information retrieval models (Jurafsky \& Martin; 2012). 
+The Tf-Idf weight of a word in a document will be high if: 1) the word appears many times in  that document, and 2) the word has low document frequency. It serves as a natural heuristic for modelling the relative importance of a word within a document. Tf-Idf weights are useful for many NLP tasks; in fact, variations of this scoring scheme are used as term weights in nearly all vector space information retrieval models (Jurafsky \& Martin; 2012). 
 
 Thus, we used Tf-Idf scores to craft four new features. The first two attempt to measure similarity of the “most important” word of each question in a pair. To do so, we find the word with the highest Tf-Idf weight in each question, then take the fastText word embedding for each of these words, and compute the distance between these vectors. We used Euclidean distance for one feature and Cosine distance for the second.
 
@@ -237,13 +237,13 @@ For example, when considering the question:
 \begin{center}
 \emph{Who is the president of the United States?}
 \end{center}
-A QA system should limit its search to words that correspand to humans, as opposed to considering all noun-phrases.
+A QA system should limit its search to words that correspond to humans, as opposed to considering all noun-phrases.
 
 Using the Text Retrieval Conference (TREC) question dataset (Voorhees; 2002), Roth and Li (2005) developed a hierarchical taxonomy for classifying the answer type of a question; this taxonomy consists of 6 coarse categories, and 50 fine sub-categories. They then annotated the 6000 questions in the TREC dataset using this taxonomy. The coarse answer categories are LOCATION, DESCRIPTION, ENTITY, NUMERIC, HUMAN, and ABBREVIATION, and some examples of fine categories are NUMERIC::Date and NUMERIC::Money. The task of predicting the answer type of a question is broadly termed \emph{Question Classification}. 
 
 We hypothesized that knowing the answer types of the questions in the Quora dataset would be useful for the question duplicate detection problem, since two questions are more likely to have duplicate intent if they share the same answer type. Our next feature set tests this hypothesis. 
 
-We trained 5 LSTM models on the TREC dataset to predict the coarse categories of each question. These models each have slightly different archetectures, but they all consisted of three layers:
+We trained 5 LSTM models on the TREC dataset to predict the coarse categories of each question. These models each have slightly different architectures, but they all consisted of three layers:
 \begin{enumerate}
 \item Embedding layer using pretrained fastText 300-dimensional embeddings
 \item LSTM layer of output dimension 50
@@ -254,7 +254,7 @@ The details of the different architectures are in Table 3. Note that we trained 
 
 \begin{table}[]
 \centering
-\caption{Archetecture details of LSTM question classifiers }
+\caption{Architecture details of LSTM question classifiers }
 \label{my-label}
 \begin{tabular}{|p{10mm}|p{10mm}|p{10mm}|p{10mm}|p{14mm}|p{8mm}|}
 \hline
@@ -267,7 +267,7 @@ LSTM 5 & LSTM              & -                      & 20\%              & NO    
 \end{tabular}
 \end{table}
 
-Using these models, we predicted the answer type of the questions in the the Quora dataset. Then, considering each LSTM model separately, we added these predictions to our baseline features, and measured the increase in our baseline XGB model using 3-fold cross validation. We also tried an ensemble approach, where the predicted class of each question is the class that was predicted the most frequently amongst the 5 LSTM models.
+Using these models, we predicted the answer type of the questions in the the Quora dataset. Then, considering each LSTM model separately, we added these predictions to our baseline features, and measured the increase in our baseline XGB model using 3-fold cross validation. We also tried an voting approach, where the predicted class of each question is the class the one most predicted amongst the 5 LSTMs.
 
 We found that the ensembled predictions, as well as a binary feature which indicates if these predictions coincide, increased the performance of our baseline XGB model the most (in terms of reduction of log-loss). Thus, these are the features in the second feature set which we propose: 
 $$
@@ -294,7 +294,7 @@ Note that words in one text are only compared to words in the other text \emph{o
 \begin{gather*} \tag{8}
 SimText(T_1,T_2) = \\ \frac{1}{2}\Big( \frac{\sum_{w \in T_1}{\maxU_{w^* \in T_2}Sim(w,w^*)Idf(w)}}{\sum_{w \in T_1}Idf(w)} \\ + \frac{\sum_{w \in T_2}{\maxU_{w^* \in T_1}Sim(w,w^*)Idf(w)}}{\sum_{w \in T_2}Idf(w)} \Big)
 \end{gather*}
-This framework guarentees the convenient properties of symmetry: $SimText(T_1, T_2)$ = $SimText(T_2, T_1)$, and that the range of the text similarity scores is the same as that of the word-to-word similarity measure  $Sim(w_1, w_2)$ used. 
+This framework guarantees the convenient properties of symmetry: $SimText(T_1, T_2)$ = $SimText(T_2, T_1)$, and that the range of the text similarity scores is the same as that of the word-to-word similarity measure  $Sim(w_1, w_2)$ used. 
 
 We used the python NLTK package for part-of-speech tagging (Bird et al; 2009). We implemented this framework using three similarity metrics available via NLTK’s WordNet interface - path similarity, Leacock-Chodorow similarity (Leacock \& Chodorow; 1998) and Wu-Palmer similarity (Wu \& Palmer; 1994). 
 
@@ -321,7 +321,7 @@ Feature_{9} = \{SimText_{Simplified}(T_1, T_2) \\ \text{where } Sim(w_1, w_2) \e
 
 \section{RESULTS}
 
-To measure the importance of each of these feature sets, we trained logistic regression and XGB models on all the features described above. We then removed different subsets of the Tf-Idf, question classification and semantic scoring feature sets, and re-tuned the models’ hyperparameters using 3-fold cross validation. We then used these models to predict the test-set labels. The prediction accuracy for the resulting models are summarized in Table 4, as well as those of our baseline classifiers described in section 4.A. We limit our analysis to the XGB model, as this performed much better than logistic regression. 
+To measure the importance of each of these feature sets, we trained logistic regression and XGB models on all the features described above. We then removed different subsets of Tf-Idf, question classification and semantic scoring feature sets, and re-tuned models’ hyperparameters using 3-fold cross validation. We then used these models to predict test-set labels. The prediction accuracy for the resulting models are summarized in Table 4, as well as those of our baseline classifiers described in section 4.A. We limit our analysis to the XGB model, as this performed much better than logistic regression. 
 
 % Please add the following required packages to your document preamble:
 % \usepackage[table,xcdraw]{xcolor}
@@ -342,7 +342,7 @@ XGB Test Set Accuracy                                                           
 \multicolumn{1}{|c|}{\cellcolor[HTML]{EFEFEF}Manhattan LSTM}                    & .7588          & \multicolumn{3}{c|}{\cellcolor[HTML]{EFEFEF}Human (400 Responses)} & .8175         & \multicolumn{2}{c|}{\cellcolor[HTML]{EFEFEF}Random Guessing} & .5015         \\ \hline
 \end{tabular}
 \begin{tablenotes}
-\item Here, \{1\} are the Tf-Idf features from 4.B, \{2\} are the question classification features from 4.C, and \{3\} are the sematantic similarity scores from 4.D.
+\item Here, \{1\} are the Tf-Idf features from 4.B, \{2\} are the question classification features from 4.C, and \{3\} are the semantic similarity scores from 4.D.
 \item Cells contain each model's prediction accuracy, as well as the difference between prediction accuracy and the best model's prediction accuracy. 
 \end{tablenotes}
 \end{threeparttable}
@@ -368,22 +368,22 @@ Including all three feature sets results in the best performance, with a test se
 
 When using ensembled tree models such as XGB, one can use the number of times a variable is split upon as a measure of that variable's importance. This measure is called the \emph{F-Score}. By plotting the F-Scores of each feature, we can gain insight into the importance of each variable used in a model, relative to the other variables present (Gareth et al; 2017).
 
-A variable importance chart of the full model corroborates the result that the Tf-Idf features are the most meaningful, as these features are amongst those with the highest F-Scores [figure 1]. The semantic similarity scores also have high F-Scores. Interestingly, when the Tf-Idf features are removed, the sematnic similarity scores become much more important relative to the remaining features, evident in Figure 2. This suggests that the Tf-Idf features and semantic similarity scores explain some of the same variance, and once the Tf-Idf features are removed the model must rely more heavily on the semantic similarity scores. Indeed, the features in these to feature sets are strongly correlated; the correlation between Feature 9 and Features 6 and 7 are 68.28\% and -73.91\%, respectively. 
+We thus observe thatTf-Idf features are the most meaningful, as these features are amongst those with the highest F-Scores [figure 1]. Semantic similarity scores also have high F-Scores. Interestingly, when the Tf-Idf features are removed, the semantic similarity scores become much more important relative to the remaining features, evident in Figure 2. This suggests that the Tf-Idf features and semantic similarity scores explain some of the same variance, and once the Tf-Idf features are removed the model must rely more heavily on the semantic similarity scores. Indeed, the features in these to feature sets are strongly correlated; the correlation between Feature 9 and Features 6 and 7 are 68.28\% and -73.91\%, respectively. 
 
-The variable importance charts also suggest that the question classification features are not meaningful. In fact, these three features are amongst four features with the lowest F-Score in the complete model. 
+The variable importance charts also suggest that the question classification features are not meaningful. In fact, these three features are amongst four features with the lowest F-Score.
 
 
 \section{DISCUSSION AND CONCLUSIONS}
 
-Using the three sets of features we describe in this paper, we were able to improve the prediciton accuracy of our baseline model from 74.56\% to 79.25\%. Of the three feature sets, those computed using Tf-Idf scores were the most impactful. This confirms our hypothesis that measures of word importance and specificity are useful in comparing the semantic similarity between two questions. 
+Using the three sets of features described in this paper, we were able to improve the accuracy of our baseline model from 74.56\% to 79.25\%. Of the three feature sets, those computed using Tf-Idf scores were the most impactful. This confirms our hypothesis that measures of word importance and specificity are useful in comparing the semantic similarity between two questions. 
 
-We also applied and extended a framework for modeling semantic similarities between short texts using knowledge-based word similarity scores, proposed by Mihalcea et al (2006). We found that these scores were useful in our classification task. These features were highly correlated with those calculated using Tf-Idf scores, however, and so it may be that these scores are capturing the specificity of the words in each question, rather than the semantic similarity of these words. 
+We also applied and extended a framework for modelling semantic similarities between short texts using knowledge-based word similarity scores, proposed by Mihalcea et al (2006). We found that these scores were useful in our classification task. These features were highly correlated with those calculated using Tf-Idf scores, so it may be that they are merely capturing the specificity of the words in each question, rather than the semantic similarity of these words. 
 
 Finally, we found that our answer type predictions were not useful for detecting duplicate questions. We suspect that this is because we used overly complex models to predict the answer type of a question. The TREC dataset has only 6,000 observations, but the number of parameters in our LSTM classifiers ranged from 70,506 to 28,141,268. It's probable that these classifiers were overfit to the TREC dataset, and did not generalize to the Quora dataset. 
 
-In future work, we would like to try using simpler models for predicting a question's answer type - such as Naïve Bayes or a Support Vector Machine. We could also try to incoroprate predictions of the fine answer categories in the annotated TREC dataset, as apposed to the coarse categories we used. 
+In future work, we would like to try using simpler models for predicting a question's answer type - such as Naïve Bayes or a Support Vector Machine. We could also try to incorporate predictions of the fine answer categories in the annotated TREC dataset, as apposed to the coarse categories we used. 
 
-We also think that an interesting extension to this work would be to extract features that concern the grammatical functions of the words in each question. For example, one could construct a dependency parse tree for each question, and compare the subjects, direct objects, and head-words of each question.
+We also think that an interesting extension to this work would be to extract features that concern the grammatical functions of the words in each question. For example, one could construct a dependency parse tree for each question, and compare the subjects, direct objects and thus extract headwords as a result. We briefly experimented with named entity recognition (NER), but it was quickly dropped in the early process upon realizing that pre-trained NER models (such as the one SpaCy provides) do very poorly on specialized datasets like Quora's. Manually trained, task-specific NER models could however provide meaningful information to the question duplication problem.
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
@@ -407,7 +407,6 @@ We also think that an interesting extension to this work would be to extract fea
 
 Tamir engineered the features described, worked on the classifiers and paper, and conducted model experiments. Jack contributed to the classifiers and paper, and experimented with advanced techniques for feature extraction, such as named entity recognition and headword extraction. 
 
-
 \section*{APPENDIX}
 
    \begin{figure}[thpb]
@@ -417,7 +416,7 @@ Tamir engineered the features described, worked on the classifiers and paper, an
 		\centering
       }}
       %\includegraphics[scale=1.0]{figurefile}
-      \caption{Manhattan Siamese LSTM archetecture, annotated with output dimension at each layer. Weights of each LSTM layer are tied (Siamese).}
+      \caption{Manhattan siamese LSTM architecture, annotated with output dimension at each layer. Weights of each LSTM layer are tied (siamese).}
       \label{figurelabel}
    \end{figure}
 
