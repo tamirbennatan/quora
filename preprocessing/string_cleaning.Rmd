@@ -1,16 +1,31 @@
-### Cleaning text
+---
+title: "Exploratory data cleaning"
+output:
+  html_document:
+    fig_height: 6
+    fig_width: 8
+    messages: no
+    toc: true
+    toc_depth: 3
+    df_print: paged
+---
 
-#### 0. Load data and packages
+I recently dove deep into this Kaggle competition, and when reading users' solutions, I saw that many people drew inspiration from [https://www.kaggle.com/currie32/the-importance-of-cleaning-text](Currie32's great notebook) when preprocessing the question pair data. 
+
+Instead of re-using Currie32's code, I used the task of cleaning this dataset as an opportunity to not only consolidate the data, but also explore it and get a feeling for its contents. 
+
+In this notebook, I explore the Quora question pair training data and uncover ways in which I could clean the data. At the end of the notebook, I run all the cleaning operations I've deemed necessary, and write the cleaned dataset to disk. 
+
+
+## 0. Load data and packages
 ```{R}
-library(dplyr)
-library(tidytext)
-library(hunspell)
-library(stringr)
+library(dplyr) # data manipulation
+library(tidytext) # Tidy tokenizing
+library(hunspell) # spell checking
+library(stringr) # regex's and other string stuff
 ```
 ```{R}
-data.traion.original = read.csv("../data/train.csv")
-#data.train <- read.csv("../data/train.csv")
-# data.test <- read.csv("../data.test.csv")
+data.train <- read.csv("../data/train.csv")
 ```
 ```{R}
 str(data.train)
@@ -19,9 +34,12 @@ str(data.train)
 head(data.train)
 ```
 
-### 1. Ivestigating the words in the questions
+## 1. Investigating the words in the questions
 
-#### 1.1 A look at the words in the training data
+### 1.1 A look at the words in the training data
+
+First, I'd like to take a look at the individual words that make up the training data questions. Getting all the individual questions in a single dataframe:
+
 ```{R}
 # Get a single dataframe with all the questions.
 train.questions <- data.train %>%
@@ -35,15 +53,15 @@ train.questions <- data.train %>%
       group_by(qid, question) %>%
       filter(row_number() == 1) %>%
       ungroup()
-
 ```
 ```{R}
 head(train.questions)
-
 ```
 
-Now to open up each question into the individual words
+And now looking at the individual words which compose the questions:
+
 ```{R}
+# see individual words in questions
 train.words <- train.questions %>%
       unnest_tokens(word, question) %>%
       mutate(valid.spelling = hunspell_check(word))
@@ -51,45 +69,44 @@ train.words <- train.questions %>%
 ```{R}
 train.words
 ```
+
+Looking at the least commonly occuring words:
+
 ```{R}
 train.words %>% group_by(word) %>% 
       summarise(n = n()) %>% 
       arrange(n)
-
 ```
 
-#### 1.2 Convert units to longform
+We can see that there is certainly some noise in this data, including words with non-ascii symbols and numeric values.-
+
+### 1.2 Convert units to longform
+
+One of the first thing I noticed is that many numeric words represented united values - for example _100kg_ is equivalent to _100 kilograms_. 
+
+I would prefer to have unitted numeric values written in this latter form, for two reasons. First, I would like consistency between each question pair - if one question uses one representation and the other uses the second, simple similarity metrics (e.gl string edit distance) will not see that _kg_ and _kilograms_ carry the same semantic meaning.
+
+Secondly, I plan on using pre-trained neural word embeddings to get a semantic representation of the words in a question. It might be the case that certain abbreviations do not exist in some pre-trained embedding libraries. 
 
 ```{R}
+# simple regex pattern for unitted numerci value
 unitted <- "[0-9\\.]+[a-z]+"
 
+# finding the words that match this regex pattern
 train.words %>%
       filter(!valid.spelling) %>%
       filter(word == str_match(word, unitted)) %>%
       mutate(value = str_split_fixed(word, "[0-9\\.]+",2)[,1],
              unit = str_split_fixed(word,"[0-9\\.]+",2)[,2]) %>%
       group_by(unit) %>%
-      summarize(n = n())
-
-```
-Some of these are actual units, while others are just words attatched to numbers.
-For the proper words, split them into numbers and words. 
-
-```{R}
-train.words %>%
-      filter(!valid.spelling) %>%
-      filter(word == str_match(word, unitted)) %>%
-      mutate(value = str_split_fixed(word, "[0-9\\.]+",2)[,1],
-             unit = str_split_fixed(word,"[0-9\\.]+",2)[,2]) %>%
-      group_by(unit) %>%
-      summarize(n = n()) %>% 
-      ungroup() %>%
-      mutate(valid.spelling = hunspell_check(unit)) %>%
-      filter(valid.spelling)
+      summarize(word = first(word),
+                frequency = n())
 
 ```
 
-There seem to be some actual units attatched to numbers, and typos where regular words are attatched to numers. I'll first cast the shorthand units to longhand units, and then split all numbers characters from words by a space. 
+Some of these are actual units, while others are just words attatched to numbers. For the proper words, split them into numbers and words. 
+
+There seem to be some actual units attatched to numbers, and typos where regular words are attatched to numbers I'll first cast the shorthand units to longhand units, and then split the numbers and words within each word into seperate words
 
 ```{R}
 shorthand.units = c("m", "cm", "g","gm", "kg", "mg",
@@ -106,14 +123,12 @@ longhand.units = c("meter", "centimeter", "gram", "gram", "kilogram", "miligram"
                    )
 ```
 ```{R}
-print("FROM TO")
-for (i in 1:length(shorthand.units)){
-      print(paste(shorthand.units[i], longhand.units[i],sep = " "))
-}
-
+data_frame(from = shorthand.units, 
+           to = longhand.units)
 ```
 
-Replace all the shorthand units with longhand units, and appropriately space
+Now, I replace all the shorthand units with longhand units.
+
 ```{R}
 # regexes to match in each iteration
 rgxs = rep("", length(shorthand.units))
@@ -129,9 +144,14 @@ for (i in 1:length(shorthand.units)){
 }
 
 ```
-Note: in the above cleaning, I'm changing numbers followed by a space, then suspected units to numbers and longform units. For example, _10 cm_ goes to _10 centimeter_. *Come back to this* - perhaps this is too strong, and I should only change things of the form _10cm_ to _10 centimete_
+
+Note: in the above cleaning, I'm changing numbers followed by a space, then suspected units to numbers and longform units. For example, _10 cm_ goes to _10 centimeter_. 
+
+Perhaps this operation is too presumptious, since it seems more likely that a number followed by what _might_ be a unit abbreviation is not in fact a unitted value if there is a space between the number and the potential unit. Perhaps I should only change things of the form _10cm_ to _10 centimeters_.
 
 #### 1.3 A look at most commonly misspelled words
+
+Looking at the most commonly "misspelled" words (according to the `hunspell` library):
 
 ```{R}
 train.words %>%
@@ -143,8 +163,11 @@ train.words %>%
       arrange(desc(n))
 ```
 
-Some of the most common errors are appreviations like _i'm_, _u.s_ and _nyc_
+Some of the most common errors are appreviations like _i'm_, _u.s_ and _nyc_. 
 
+Also notic that named entities - such as _google_ and _facebook_, occur rather frequently in the dataset. Perhaps in the downstream classification task, one could benefit from using some Named Entities Recognition techniques.
+
+Now looking at the most commonly misspelled words of character length two:
 
 ```{R}
 train.words %>%
@@ -158,12 +181,21 @@ train.words %>%
        arrange(desc(n))
 
 ```
+
+
+This list includes some common abbreviations that I think are worth converting. 
+
 ```{R}
 # two letter words I'm going to replace
 spelling.errs.2 <- c(" uk ", " os ", " eu ", " gb ", " fb ", " js ", " gf")
 # replacements
 spelling.fixes.2 = c("england", "operating system ", "european union", "gigabyte", "facebook", "javascript", "girlfriend")
-
+```
+```{R}
+data_frame(from = spelling.errs.2,
+           to = spelling.fixes.2)
+```
+```{R}
 # convert shorthanded units to longhanded united values in data
 for (i in 1:length(spelling.errs.2)){
       data.train <- data.train %>%
@@ -172,6 +204,9 @@ for (i in 1:length(spelling.errs.2)){
             )
 }
 ```
+
+
+Now looking at the most commonly misspelled words of character length three:
 
 ```{R}
 train.words %>%
@@ -185,15 +220,16 @@ train.words %>%
        arrange(desc(n))
 
 ```
-```{R}
-smpl <- data.train %>% filter(str_detect(question1, " u\\.s\\.a "))
-View(smpl)
-```
 
 ```{R}
 spelling.errs.3 <- c("( |)i\'m ", " usa ", " u\\.s\\.a ", " u\\.s\\. ", "nyc " )
 spelling.fixes.3 <- c(" i am ", " america ", " america ", " america" , " new york city " )
-
+```
+```{R}
+data_frame(from = spelling.errs.3,
+           to = spelling.fixes.3)
+```
+```{R}
 # Fix spelling errors
 for (i in 1:length(spelling.errs.3)){
       data.train <- data.train %>%
@@ -203,7 +239,9 @@ for (i in 1:length(spelling.errs.3)){
 }
 ```
 
-#### Look at most common words with alphanumeric characters 
+
+Finally, I'm interested to see what are the most commonly misspelled words that contain non-alphanumeric characters:
+
 
 ```{R}
 train.words %>%
@@ -214,11 +252,13 @@ train.words %>%
 
 ```
 
-THe most common words with non alphanumeric characters are words abbreviated words, like _what's_. 
+The most common words with non alphanumeric characters are words abbreviated words, like _what's_. 
 
 I'll split these abbreviations using general rules when possible, and then consider the most important cases individually. 
 
-First, the suffix _-n't_ translates to _ - not_. 
+First, the suffix _-n't_ translates to _ - not_.
+
+
 ```{R}
 data.train <- data.train %>%
       mutate(question1 = str_replace_all( question1, regex("(can\'t )"), "can not "),
@@ -231,6 +271,8 @@ data.train <- data.train %>%
 ```
 
 Now, convert the suffix _-'ve_ translates to _ - have_
+
+
 ```{R}
 data.train <- data.train %>%
       mutate(
@@ -239,6 +281,8 @@ data.train <- data.train %>%
 ```
 
 Now, convert the suffix _'re_ translates to _ - are_
+
+
 ```{R}
 data.train <- data.train %>%
       mutate(
@@ -247,14 +291,16 @@ data.train <- data.train %>%
 ```
 
 Now, convert the suffix _'ll_ translates to _ - will_
+
+
 ```{R}
 data.train <- data.train %>%
       mutate(
             question1 = str_replace_all( question1, regex("([a-z]+)(\'ll )"), "\\1 will "),
             question2 = str_replace_all( question2, regex("([a-z]+)(\'ll )"), "\\1 will "))
 
-
 ```
+
 
 Now, convert the suffix _'d_ translates to _ - would_
 
@@ -270,18 +316,13 @@ data.train <- data.train %>%
 
 ### 2. Looking at words with non-alphanumeric characters
 
+
+Many of the problematic tokens contain non-ascii characters (perhaps symbols from other languages, emojis, etc). This section focuses on the handling of words with these characters. 
+
+
 #### 2.1 The most frequently occuring words with special characters
 
-```{R}
-train.words %>%
-      filter(!is.na(str_match(word, regex("[^a-z0-9\'\\,\\.\\- ]", ignore_case = TRUE)))) %>%
-      group_by(word) %>%
-      summarize(n = n()) %>% 
-      arrange(desc(n))
-
-```
-
-One of the rifrst thing I notice is that some words use *’* as an appostrophe, while others use *'*. This means that much of the processing that I have done previously will not affect the text! I'll be sure to first cast all *’* characters to *'*, then re-apply the opertations above. 
+One of the first thing I notice is that some words use *’* as an appostrophe, while others use *'*. This means that much of the processing that I have done previously will not affect the text! I'll be sure to first cast all *’* characters to *'*, then re-apply the opertations above. 
 
 If I assume that I have fixed these cases, the most frequently occuring words with special characters are:
 
@@ -296,7 +337,7 @@ train.words %>%
 
 I see that some of the most common words are those that contain vowels with accents - _pokémon_, _schrödinger's_, etc. 
 
-I'm sure that not all users take put in the time to type out these accented vowels. Since we plan to use word embeddings, pairs of words like _pokémon_ and _pokemon_ are not mapped to the same vector, which is a loss of information. 
+I'm sure that not all Quora users  take the time to type out these accented vowels. Since we plan to use word embeddings, pairs of words like _pokémon_ and _pokemon_ are not mapped to the same vector, which is a loss of information. 
 
 Thus, I will standardize the words to remove the (most commonly occuring) accents on vowels. 
 
@@ -305,14 +346,16 @@ accented <- c( "ã", "á", "ä", "å", "à", "ç", "é", "è", "í", "ï",  "ì"
 unaccented <- c("a", "a", "a","a", "a", "c", "e", "e", "i", "i", "i", "o", "o", "o", "o", "o", "u", "u", "u","u", "n")
 ```
 ```{R}
+data_frame(from = accented, 
+           to = unaccented)
+```
+```{R}
 for (i in 1:length(accented)){
       data.train <- data.train %>%
             mutate(question1 = str_replace_all(question1, accented[i], unaccented[i]), 
                    question2 = str_replace_all(question2, accented[i], unaccented[i]))
 }
 ```
-
-
 ```{R}
 data.train %>%
       unnest_tokens(word, question1) %>%
@@ -327,7 +370,7 @@ data.train %>%
 
 #### 2.2 Misclelaneous fixes
 
-One off fixes. Some of these are inspired by this notebook: https://www.kaggle.com/currie32/quora-question-pairs/the-importance-of-cleaning-text
+One off fixes. Some of these fixes are inspired by [https://www.kaggle.com/currie32/quora-question-pairs/the-importance-of-cleaning-text](Currie32's notebook). 
 
 ```{R}
 misc.errors <- c("π ", "([1-9][0-9]*)(k) ", " e\\-mail ", " cs ", " upvotes ", " calender ",

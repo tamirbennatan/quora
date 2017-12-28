@@ -131,11 +131,28 @@ no.tfidf %>%
 ```{R}
 data <-  read.csv('../../data/features.csv')
 ```
+```{R}
+df = data %>%
+      select(euclidean_distance_max_tfidf_word,
+             cosine_distance_max_tfidf_word,
+             word_intersection_tfidf_weight,
+             word_intersection_tfidf_weight,
+             word_symmetric_difference_tfidf_weight,
+             lstm_vote_q1,
+             lstm_vote_q2,
+             lstm_vote_agree,
+             embedding_similarity_score,
+             lch_similarity)
 
 
+View(df)
+```
+```{R}
+library(corrplot)
 
+cor(select(df, -lstm_vote_agree))
 
-
+```
 
 
 
