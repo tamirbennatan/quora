@@ -149,7 +149,7 @@ Note: in the above cleaning, I'm changing numbers followed by a space, then susp
 
 Perhaps this operation is too presumptious, since it seems more likely that a number followed by what _might_ be a unit abbreviation is not in fact a unitted value if there is a space between the number and the potential unit. Perhaps I should only change things of the form _10cm_ to _10 centimeters_.
 
-#### 1.3 A look at most commonly misspelled words
+### 1.3 A look at most commonly misspelled words
 
 Looking at the most commonly "misspelled" words (according to the `hunspell` library):
 
@@ -314,13 +314,13 @@ data.train <- data.train %>%
 ```
 
 
-### 2. Looking at words with non-alphanumeric characters
+## 2. Looking at words with non-alphanumeric characters
 
 
 Many of the problematic tokens contain non-ascii characters (perhaps symbols from other languages, emojis, etc). This section focuses on the handling of words with these characters. 
 
 
-#### 2.1 The most frequently occuring words with special characters
+### 2.1 The most frequently occuring words with special characters
 
 One of the first thing I notice is that some words use *’* as an appostrophe, while others use *'*. This means that much of the processing that I have done previously will not affect the text! I'll be sure to first cast all *’* characters to *'*, then re-apply the opertations above. 
 
@@ -368,7 +368,7 @@ data.train %>%
 
 ```
 
-#### 2.2 Misclelaneous fixes
+### 2.2 Misclelaneous fixes
 
 One off fixes. Some of these fixes are inspired by [https://www.kaggle.com/currie32/quora-question-pairs/the-importance-of-cleaning-text](Currie32's notebook). 
 
@@ -379,6 +379,10 @@ misc.errors <- c("π ", "([1-9][0-9]*)(k) ", " e\\-mail ", " cs ", " upvotes ", 
 misc.fixes <-  c(" pi ", "\\1 k ", " email ", " computer science ", " up votes ", " calendar ",
                  " active ", " demonetization ", " initialy ", " quickly ", "programming ", " best friend ", " america ")
 
+```
+```{R}
+data_frame(from = misc.errors, 
+           to = misc.fixes)
 ```
 ```{R}
 for (i in 1:length(misc.errors)){
@@ -393,17 +397,12 @@ for (i in 1:length(misc.errors)){
 ```{R}
 data.train %>%
       filter(is.na(question1) | is.na(question2))
-
 ```
 
 
-### 3. Removing non-alphanumieric characters
+## 3. Removing non-alphanumieric characters
 
-For now I will not remove punctuation, as I may want to create some linguistic features out of them in the future. I will however remove all other non-ascii characters. 
-
-Removing punctuation, though it removes symantic meaning for a human, may be helpful in removing the noise in the data. For now, I will space out all punctuation marks with whitespace characters. This way, the string _"really?"_ will turn to _"really ?"_, and so the word _really_ will be identified in the word embeddings. Otherwise we would be trying to embedd the word _really?_, which likely isn't in the lexicon. 
-
-When building models, should experiment with this. 
+Now, I'll put a space before/after every punctuation mark. This way, the string _"really?"_ will turn to _"really ?"_. This will make it easier to remove/isolate punctuation in the future, if deemed necessary. 
 
 ```{R}
 data.train <- data.train %>% 
@@ -415,20 +414,19 @@ data.train <- data.train %>%
 ```
 
 
-### 4. Putting it all together (in order)
+## 4. Putting it all together (in order)
 
-I applied all the transformations in the order that I discovered their neccesity - not in the order which they should be applied. Thus the data is currupted. 
+I applied all the transformations in the order that I discovered their neccesity - not in the order which they should be applied. Thus the data is corrupted. 
 
 I will re-load the data, and apply every operation over again. This block should be run (or modified) to clean the data in the future. 
 
 
-#### 4.1 Re-load data. 
+### 4.1 Re-load data. 
 ```{R}
 data.train <- read.csv("../data/train.csv")
-#data.test <- read.csv("../data/test.csv")
 ```
 
-#### 4.2 Replace special characters with characters you want to ultimately keep 
+### 4.2 Replace special characters with characters you want to ultimately keep 
 
 ```{R}
 # replace accented vowels with their unaccented equivalents
@@ -452,7 +450,10 @@ data.train <- data.train %>% mutate(question1 = str_replace_all(question1, " & "
                      question2 = str_replace_all(question2, "=", " equals "))
 
 ```
-#### 4.3 Fix common spelling errors and abbreviations
+
+### 4.3 Fix common spelling errors and abbreviations
+
+
 ```{R}
 # two letter words I'm going to replace
 spelling.errs.2 <- c(" uk ", " os ", " eu ", " gb ", " fb ", " js ", " gf ")
@@ -480,7 +481,11 @@ for (i in 1:length(spelling.errs.3)){
             )
 }
 ```
-#### 4.3 Misc. spellling errors
+
+
+### 4.3 Misc. spellling errors
+
+
 ```{R}
 misc.errors <- c("π ", "([1-9][0-9]*)(k) ", " e\\-mail ", " cs ", " upvotes ", " calender ",
                  " actived ", " demonitization ", " intially ", " quikly ", " programing ", " bestfriend ", 
@@ -501,7 +506,9 @@ for (i in 1:length(misc.errors)){
 }
 ```
 
-#### 4.4 Convert shorthand units to longhand units
+### 4.4 Convert shorthand units to longhand units
+
+
 ```{R}
 shorthand.units = c("m", "cm", "g","gm", "kg", "mg",
                      "min" , "j", "deg", "hr", "hrs", 
@@ -531,7 +538,9 @@ for (i in 1:length(shorthand.units)){
 }
 ```
 
-#### 4.5 Replace common abbreviations with longhand (would've -> would have)
+### 4.5 Replace common abbreviations with longhand (would've -> would have)
+
+
 ```{R}
 # pattern: can't -> can not 
 data.train <- data.train %>%
@@ -544,7 +553,10 @@ data.train <- data.train %>%
 
 ```
 
+
 Now, convert the suffix _-'ve_ translates to _ - have_
+
+
 ```{R}
 # pattern: would've -> would have 
 data.train <- data.train %>%
@@ -575,7 +587,9 @@ data.train <- data.train %>%
 
 ```
 
-#### 4.6 Space out punctuation
+### 4.6 Space out punctuation
+
+
 ```{R}
 data.train <- data.train %>% mutate(question1 = str_replace_all(question1, "([\\.\\,\\-\\?\"])", " \\1 "), 
                       question2 = str_replace_all(question2, "([\\.\\,\\-\\?\"])", " \\1 "))
@@ -583,7 +597,7 @@ data.train <- data.train %>% mutate(question1 = str_replace_all(question1, "([\\
 
 ```
 
-#### 4.7 Remove all non-alphanumeric characters
+### 4.7 Remove all non-alphanumeric characters
 
 ```{R}
 # also remove any repeates spaces that may have come about
@@ -594,11 +608,11 @@ data.train <- data.train %>%
              question2 = str_replace_all(question2, regex("[ ]{2,}"), " "))
 ```
 
-#### 5. Write  processed data to disk
+### 5. Write  processed data to disk
 
 ```{R}
 # there are two empty questions. remove these, and write to disk. 
-write.csv(data.train %>% filter(question1 != '' & question2 != ''), "../data/processed/train.csv")
+#write.csv(data.train %>% filter(question1 != '' & question2 != ''), "../data/processed/train.csv")
 
 ```
 
