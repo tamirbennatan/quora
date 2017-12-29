@@ -1,6 +1,7 @@
 '''
 Extract predictions of question answer type
 LSTM's trained and saved in `question_classification/trec_lstms.ipynb`
+LSTM's trained on TREC dataset, annotated by Li and Roth (2004)
 '''
 
 import pandas as pd
@@ -25,6 +26,11 @@ def encode_and_pad(questions, tokenizer, sequence_length = 10):
                             padding = "post", 
                             truncating = "post")
     return(padded)
+
+
+# return the most frequently occuring value in an array
+def most_common(lst):
+    return max(set(lst), key=lst.count)
 
 
 def predict_question_class(df):
@@ -90,35 +96,22 @@ def predict_question_class(df):
             encode_and_pad(df['question2'].values, tokenizer, sequence_length = 6)
         )
 
+    # most commonly predicted class of question1 amongst the five LSTM models
+    df['lstm_vote_q1'] = df.apply(lambda x: \
+                 most_common([x['lstm_1_q1_pred'], x['lstm_2_q1_pred'], \
+                              x['lstm_3_q1_pred'], x['lstm_4_q1_pred'], \
+                              x['lstm_5_q1_pred']]), axis = 1)
 
+    # most commonly predicted class of queston2 amongst the five LSTM models
+    df['lstm_vote_q2'] = df.apply(lambda x: \
+                 most_common([x['lstm_1_q2_pred'], x['lstm_2_q2_pred'], \
+                              x['lstm_3_q2_pred'], x['lstm_4_q2_pred'], \
+                              x['lstm_5_q2_pred']]), axis = 1)
 
+    # A feature which shows if the most vote classes agree
+    df['lstm_vote_agree'] = (df['lstm_vote_q1'] == df['lstm_vote_q2'])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return(df)
 
 
 

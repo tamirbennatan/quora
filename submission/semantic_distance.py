@@ -1,7 +1,6 @@
 '''
 Semantic distance scoring functions, as described by Mihalcea et all (2006)
 Features described in the `feature_engineering/wordnet_distance.ipynb` notebook
-
 '''
 
 import pandas as pd
@@ -15,6 +14,10 @@ import re
 import spacy
 # Load spaCy pipeline. Disable Named Entity Recognition, since I don't need it. 
 nlp = spacy.load('en_core_web_lg', disable=['ner'])
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 
 ##############################
@@ -266,33 +269,15 @@ def embedding_similarity_score(sentence1, sentence2):
 # Extract the semantic similarity scores used in the classifier
 ##############################
 
-def extract_sematnic_similarity(df):
-    
+def extract_semantnic_similarity(df):
+
     # Leacock Chodorow Distace
     df['lch_similarity'] = df.apply(lambda x : lch_similarity(x['question1'],x['question2']), axis = 1)
     # Pairwise GloVe embedding cosine distance
     df['embedding_similarity_score'] = df.apply(lambda x : embedding_similarity_score(x['question1'],x['question2']), axis = 1)
 
+
+    df[[u'lch_similarity', 'embedding_similarity_score']].fillna(value=0)
+
     return(df)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
