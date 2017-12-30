@@ -27,6 +27,7 @@ if __name__ == '__main__':
     print
     print("Loading test set...")
     df = pd.read_csv("../data/test.csv")
+    df.fillna("oov", inplace = True)
     print("done.")
     print
 
